@@ -6,6 +6,8 @@ var current_section: SettingsSection = null
 
 func _ready() -> void:
 	MusicPlayer.update_song_label("Mario Kart DS - Options Menu", "Fyre150")
+	get_viewport().size_changed.connect(_adapt_widescreen_layout)
+	_adapt_widescreen_layout()
 	await get_tree().process_frame
 	set_starting_values()
 
@@ -38,7 +40,7 @@ func set_starting_values() -> void:
 		i.set_option_node_values()
 
 func apply_settings() -> void:
-	for i in [$DisplaySettings, $AudioSettings, $GameplaySettings, $AbilitySettings]:
+	for i in [$DisplaySettings, $AudioSettings, $GameplaySettings, $AbilitySettings, $AndroidSettings]:
 		var options = i.get_chosen_options()
 		for x in options.keys():
 			SettingsManager.settings_file[x] = options[x]
@@ -46,3 +48,15 @@ func apply_settings() -> void:
 	SoundManager.play_ui_sound(SoundManager.coin)
 	SettingsManager.apply_settings(SettingsManager.settings_file)
 	SettingsManager.save_settings()
+
+func _adapt_widescreen_layout() -> void:
+	# Keep the header aligned to the viewport edges when EXPAND reveals more
+	# horizontal game space on ultrawide displays.
+	$TitleHeader.anchor_left = 0.0
+	$TitleHeader.anchor_right = 1.0
+	$TitleHeader.offset_left = 16.0
+	$TitleHeader.offset_right = -16.0
+	$HSeparator.anchor_left = 0.5
+	$HSeparator.anchor_right = 0.5
+	$HSeparator.offset_left = -56.0
+	$HSeparator.offset_right = 56.0
