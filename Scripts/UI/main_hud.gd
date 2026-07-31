@@ -40,7 +40,11 @@ func _ready() -> void:
 		$Container.size.x = size.x + 16
 	else:
 		$Container.size.x = 256
-	$Container.position.x = (480 - $Container.size.x) / 2
+	get_viewport().size_changed.connect(_center_hud)
+	_center_hud()
+
+func _center_hud() -> void:
+	$Container.position.x = (get_viewport().get_visible_rect().size.x - $Container.size.x) / 2.0
 
 func refresh_coin_list() -> void:
 	pass
@@ -100,9 +104,6 @@ func _process(_delta: float) -> void:
 	else:
 		life_count.modulate = Color.WHITE
 
-
-
-
 func update_itembox_visuals() -> void:
 	pass
 
@@ -118,4 +119,3 @@ func _on_timer_timeout() -> void:
 	if is_instance_valid(CoopManager.get_first_any_player()) == false:
 		return
 	GameManager.time -= 1
-	
