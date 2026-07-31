@@ -45,6 +45,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends python3
+          rm -rf /var/lib/apt/lists/*
+
           mkdir -p ~/.local/share/godot/export_templates ~/.config
 
           CONFIG_SOURCE="/root/.config/godot"
