@@ -5,21 +5,10 @@ on:
   push:
     branches:
       - android-touch-controls
-    paths:
-      - "Android/**"
-      - "tools/prepare_android.py"
-      - "export_presets.cfg"
-      - "project.godot"
-      - ".github/workflows/android-apk.yml"
+      - android-rom-ultrawide
   pull_request:
     branches:
       - main
-    paths:
-      - "Android/**"
-      - "tools/prepare_android.py"
-      - "export_presets.cfg"
-      - "project.godot"
-      - ".github/workflows/android-apk.yml"
 
 permissions:
   contents: read
@@ -29,6 +18,24 @@ env:
   EXPORT_NAME: "SuperMarioWorldRemasteredPlus"
 
 jobs:
+  source-snapshot:
+    name: Source snapshot
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: smw-source-snapshot
+          path: |
+            .
+            !.git/**
+          include-hidden-files: true
+          retention-days: 1
+
   build-android:
     name: Build Android ARM64 APK
     runs-on: ubuntu-24.04
