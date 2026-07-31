@@ -11,6 +11,15 @@ on:
       - "export_presets.cfg"
       - "project.godot"
       - ".github/workflows/android-apk.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "Android/**"
+      - "tools/prepare_android.py"
+      - "export_presets.cfg"
+      - "project.godot"
+      - ".github/workflows/android-apk.yml"
 
 permissions:
   contents: read
