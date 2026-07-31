@@ -1,0 +1,92 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - android-touch-controls
+    paths:
+      - "Android/**"
+      - "tools/prepare_android.py"
+      - "export_presets.cfg"
+      - "project.godot"
+      - ".github/workflows/android-apk.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "Android/**"
+      - "tools/prepare_android.py"
+      - "export_presets.cfg"
+      - "project.godot"
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.4.1"
+  EXPORT_NAME: "SuperMarioWorldRemasteredPlus"
+
+jobs:
+  build-android:
+    name: Build Android ARM64 APK
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.4.1
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Configure Godot and Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends python3
+          rm -rf /var/lib/apt/lists/*
+
+          mkdir -p ~/.local/share/godot/export_templates ~/.config
+
+          CONFIG_SOURCE="/root/.config/godot"
+          CONFIG_TARGET="$HOME/.config/godot"
+          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
+            rm -rf "$CONFIG_TARGET"
+            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
+          fi
+
+          TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
+            rm -rf "$TEMPLATE_TARGET"
+            mv "$TEMPLATE_SOURCE" "$TEMPLATE_TARGET"
+          fi
+
+          python3 tools/prepare_android.py
+
+      - name: Import and validate project
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --import
+
+      - name: Export debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/android
+          godot --headless --verbose --path . \
+            --export-debug "Android" \
+            "build/android/${EXPORT_NAME}.apk"
+          test -s "build/android/${EXPORT_NAME}.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: smw-remastered-plus-android-arm64
+          path: build/android/${{ env.EXPORT_NAME }}.apk
+          if-no-files-found: error
+          retention-days: 14
