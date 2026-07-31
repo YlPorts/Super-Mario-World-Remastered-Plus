@@ -43,15 +43,11 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 12
 text = "
-Please place your SMW ROM into:
+Select your legally dumped Super Mario World ROM.
 
+Press A / Enter or tap SELECT ROM.
 
-
-
-Name the ROM file: \"baserom.sfc\"
-
-
-Then hit Enter or A to verify!"
+Supported files: .sfc or .smc"
 horizontal_alignment = 1
 
 [node name="Error" type="Label" parent="Text"]
@@ -84,9 +80,23 @@ grow_vertical = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 12
-text = "user"
+text = "No ROM selected"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="SelectRomButton" type="Button" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -70.0
+offset_top = 36.0
+offset_right = 70.0
+offset_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "SELECT ROM"
 
 [node name="Success" type="Label" parent="."]
 visible = false
@@ -113,3 +123,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 1)
+
+[connection signal="pressed" from="SelectRomButton" to="." method="open_rom_picker"]
