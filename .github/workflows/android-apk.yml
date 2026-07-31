@@ -47,9 +47,11 @@ jobs:
           set -euo pipefail
           mkdir -p ~/.local/share/godot/export_templates ~/.config
 
-          if [ -d /root/.config/godot ]; then
-            rm -rf ~/.config/godot
-            mv /root/.config/godot ~/.config/godot
+          CONFIG_SOURCE="/root/.config/godot"
+          CONFIG_TARGET="$HOME/.config/godot"
+          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
+            rm -rf "$CONFIG_TARGET"
+            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
           fi
 
           TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
