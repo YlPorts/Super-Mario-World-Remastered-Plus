@@ -11,7 +11,6 @@ signal language_changed(code: String)
 const BUILTIN_LANGUAGE_DIR := "res://languages"
 const DEFAULT_LANGUAGE := "en"
 const RESCAN_SECONDS := 0.20
-const PIXEL_FALLBACK_FONT: Font = preload("res://Resources/Fonts/SMW Text NC.ttf")
 const META_SOURCE_PREFIX := "_smwr_language_source_"
 const META_RENDERED_PREFIX := "_smwr_language_rendered_"
 
@@ -22,7 +21,6 @@ var external_language_dir := ""
 var _tracked: Array[WeakRef] = []
 var _tracked_ids: Dictionary = {}
 var _scan_elapsed := 0.0
-var _patched_fonts: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -38,7 +36,7 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 	get_tree().node_removed.connect(_on_node_removed)
 	call_deferred("_register_tree", get_tree().root)
-	print("[LANG63] READY languages=", get_available_language_codes(), " selected=", current_language)
+	print("[LANG64] READY languages=", get_available_language_codes(), " selected=", current_language)
 
 func _process(delta: float) -> void:
 	_scan_elapsed += delta
@@ -76,7 +74,7 @@ func set_language(code: String, save_setting := true) -> void:
 
 	_refresh_tracked_nodes(true)
 	language_changed.emit(current_language)
-	print("[LANG63] LANGUAGE CHANGED: ", current_language)
+	print("[LANG64] LANGUAGE CHANGED: ", current_language)
 
 func text(source_english: String) -> String:
 	var lookup := _normalize_source(source_english)
@@ -144,21 +142,50 @@ func _get_external_language_dir() -> String:
 		return ""
 	return executable.get_base_dir().path_join("languages")
 
-func _load_language_directory(path: String, overwrite_existing: bool) -> void:
+func _load_language_directory(path: String, overwrite_metadata: bool) -> void:
 	var directory := DirAccess.open(path)
 	if directory == null:
 		return
 
+	var filenames: Array[String] = []
 	directory.list_dir_begin()
 	var filename := directory.get_next()
 	while not filename.is_empty():
 		if not directory.current_is_dir() and filename.to_lower().ends_with(".txt") and not filename.begins_with("_"):
-			var pack := _parse_language_file(path.path_join(filename))
-			var code := str(pack.get("code", "")).to_lower()
-			if not code.is_empty() and (overwrite_existing or not packs.has(code)):
-				packs[code] = pack
+			filenames.append(filename)
 		filename = directory.get_next()
 	directory.list_dir_end()
+
+	filenames.sort_custom(func(a: String, b: String) -> bool:
+		return a.naturalnocasecmp_to(b) < 0
+	)
+	for language_filename in filenames:
+		var pack := _parse_language_file(path.path_join(language_filename))
+		var code := str(pack.get("code", "")).to_lower()
+		if not code.is_empty():
+			_merge_language_pack(code, pack, overwrite_metadata)
+
+func _merge_language_pack(code: String, incoming: Dictionary, overwrite_metadata: bool) -> void:
+	if not packs.has(code):
+		packs[code] = incoming
+		return
+
+	var merged: Dictionary = packs[code]
+	var merged_entries: Dictionary = merged.get("entries", {})
+	var incoming_entries: Dictionary = incoming.get("entries", {})
+	# Files are sorted, so later files can intentionally refine or shorten text
+	# without replacing the whole language pack. External packs are loaded last.
+	for key in incoming_entries.keys():
+		merged_entries[key] = incoming_entries[key]
+	merged["entries"] = merged_entries
+
+	if overwrite_metadata or str(merged.get("name", "")).is_empty():
+		merged["name"] = incoming.get("name", code)
+	if overwrite_metadata or str(merged.get("fallback", "")).is_empty():
+		merged["fallback"] = incoming.get("fallback", DEFAULT_LANGUAGE)
+	if overwrite_metadata:
+		merged["path"] = incoming.get("path", "")
+	packs[code] = merged
 
 func _parse_language_file(path: String) -> Dictionary:
 	var result := {
@@ -246,7 +273,22 @@ func _unescape(value: String) -> String:
 	return output
 
 func _normalize_source(source: String) -> String:
-	return source.strip_edges()
+	# Text in scenes often differs only by upper/lower case or by manual line
+	# wrapping. Normalize both so OPTIONS, Options and wrapped message boxes all
+	# use the same editable TXT entry.
+	var stripped := source.strip_edges().to_lower()
+	var output := ""
+	var pending_space := false
+	for index in range(stripped.length()):
+		var character := stripped.substr(index, 1)
+		if character in [" ", "\t", "\n", "\r"]:
+			pending_space = true
+			continue
+		if pending_space and not output.is_empty():
+			output += " "
+		output += character
+		pending_space = false
+	return output
 
 func _source_exists(source: String) -> bool:
 	if not packs.has(DEFAULT_LANGUAGE):
@@ -277,7 +319,6 @@ func _register_text_node(node: Node) -> void:
 		return
 	_tracked_ids[id] = true
 	_tracked.append(weakref(node))
-	_ensure_pixel_font_fallback(node)
 	_translate_node(node, true)
 
 func _refresh_tracked_nodes(force := false) -> void:
@@ -287,7 +328,6 @@ func _refresh_tracked_nodes(force := false) -> void:
 		if node == null or not is_instance_valid(node):
 			continue
 		remaining.append(reference)
-		_ensure_pixel_font_fallback(node)
 		_translate_node(node, force)
 	_tracked = remaining
 
@@ -324,6 +364,7 @@ func _translate_property(object: Object, property_name: String, force: bool) -> 
 	if source.is_empty():
 		return
 	var rendered := _translate_preserving_outer_whitespace(source)
+	rendered = _make_font_safe(object, rendered)
 	if current != rendered or force:
 		object.set(property_name, rendered)
 	object.set_meta(rendered_meta, rendered)
@@ -338,23 +379,48 @@ func _translate_preserving_outer_whitespace(source: String) -> String:
 	var core := source.substr(left, right - left)
 	return source.substr(0, left) + text(core) + source.substr(right)
 
-func _ensure_pixel_font_fallback(node: Node) -> void:
-	if not node is Control:
-		return
-	var control := node as Control
-	for theme_font_name in [&"font", &"normal_font", &"bold_font", &"italics_font", &"bold_italics_font"]:
-		if control.has_theme_font(theme_font_name):
-			_add_font_fallback(control.get_theme_font(theme_font_name))
+func _make_font_safe(object: Object, value: String) -> String:
+	# Do not mix a proportional TTF into the original bitmap UI fonts. Keep
+	# accented characters when the active font supports them; otherwise use a
+	# close ASCII glyph so spacing and baselines stay pixel-perfect.
+	if not object is Control:
+		return value
+	var control := object as Control
+	var font_name: StringName = &"font"
+	if object is RichTextLabel:
+		font_name = &"normal_font"
+	var font := control.get_theme_font(font_name)
+	if font == null:
+		return value
 
-func _add_font_fallback(font: Font) -> void:
-	if font == null or font == PIXEL_FALLBACK_FONT:
-		return
-	var id := font.get_instance_id()
-	if _patched_fonts.has(id):
-		return
-	var fallbacks: Array[Font] = []
-	fallbacks.assign(font.fallbacks)
-	if not fallbacks.has(PIXEL_FALLBACK_FONT):
-		fallbacks.append(PIXEL_FALLBACK_FONT)
-		font.fallbacks = fallbacks
-	_patched_fonts[id] = true
+	var output := ""
+	for index in range(value.length()):
+		var character := value.substr(index, 1)
+		if font.has_char(character.unicode_at(0)):
+			output += character
+		else:
+			output += _ascii_fallback(character)
+	return output
+
+func _ascii_fallback(character: String) -> String:
+	match character:
+		"á", "à", "â", "ä", "ã": return "a"
+		"Á", "À", "Â", "Ä", "Ã": return "A"
+		"é", "è", "ê", "ë": return "e"
+		"É", "È", "Ê", "Ë": return "E"
+		"í", "ì", "î", "ï": return "i"
+		"Í", "Ì", "Î", "Ï": return "I"
+		"ó", "ò", "ô", "ö", "õ": return "o"
+		"Ó", "Ò", "Ô", "Ö", "Õ": return "O"
+		"ú", "ù", "û", "ü": return "u"
+		"Ú", "Ù", "Û", "Ü": return "U"
+		"ñ": return "n"
+		"Ñ": return "N"
+		"ç": return "c"
+		"Ç": return "C"
+		"¿", "¡": return ""
+		"º": return "o"
+		"ª": return "a"
+		"–", "—": return "-"
+		"…": return "..."
+		_: return character
