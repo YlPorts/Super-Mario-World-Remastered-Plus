@@ -1,13 +1,16 @@
 extends Node
 
+const PORT_MANAGER_SCRIPT := "res://Android/port_manager.gd"
+const TOUCH_CONTROLS_SCRIPT := "res://Android/touch_controls.gd"
+
 var can_check := true
 var _port_manager: Node
 
 
 func _ready() -> void:
-	_port_manager = get_node_or_null("/root/PortManager")
-	if _port_manager != null:
-		_port_manager.rom_imported.connect(_on_rom_imported)
+	_port_manager = _ensure_root_service("PortManager", PORT_MANAGER_SCRIPT)
+	_ensure_root_service("TouchControls", TOUCH_CONTROLS_SCRIPT)
+	_connect_port_manager()
 
 	if verify_rom():
 		proceed()
@@ -21,17 +24,52 @@ func _process(_delta: float) -> void:
 		open_rom_picker()
 
 
+func _ensure_root_service(service_name: String, script_path: String) -> Node:
+	var existing := get_node_or_null("/root/" + service_name)
+	if existing != null:
+		return existing
+
+	var service_script := load(script_path)
+	if service_script == null:
+		push_error("Could not load Android service: " + script_path)
+		return null
+
+	var service: Node = service_script.new()
+	if service == null:
+		push_error("Could not create Android service: " + service_name)
+		return null
+	service.name = service_name
+	get_tree().root.add_child(service)
+	return service
+
+
+func _connect_port_manager() -> void:
+	if _port_manager == null:
+		return
+	if not _port_manager.rom_imported.is_connected(_on_rom_imported):
+		_port_manager.rom_imported.connect(_on_rom_imported)
+
+
+func _refresh_port_manager() -> bool:
+	if is_instance_valid(_port_manager):
+		return true
+	_port_manager = _ensure_root_service("PortManager", PORT_MANAGER_SCRIPT)
+	_connect_port_manager()
+	return is_instance_valid(_port_manager)
+
+
 func verify_rom() -> bool:
-	return _port_manager != null and _port_manager.rom_is_valid()
+	return _refresh_port_manager() and _port_manager.rom_is_valid()
 
 
 func open_rom_picker() -> void:
 	if not can_check:
 		return
-	if _port_manager == null:
-		show_rom_prompt("File picker unavailable. Restart the app and try again.", true)
+	if not _refresh_port_manager():
+		show_rom_prompt("The ROM picker could not start. Reinstall this updated APK and try again.", true)
 		return
 	$RomPanel/Content/Status.text = "Opening Android file picker..."
+	$RomPanel/Content/Status.modulate = Color(1.0, 0.86, 0.35, 1.0)
 	_port_manager.request_rom_selection()
 
 
