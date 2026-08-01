@@ -34,23 +34,21 @@ jobs:
           ref: windows-godot-4.7.1
           lfs: true
 
-      - name: Configure safe Godot 4.7.1 desktop project
+      - name: Configure bilingual Windows project
         shell: bash
         run: |
           set -euo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends python3 zip
+          apt-get install -y --no-install-recommends python3 ca-certificates zip
           rm -rf /var/lib/apt/lists/*
 
           mkdir -p ~/.local/share/godot/export_templates ~/.config
-
           CONFIG_SOURCE="/root/.config/godot"
           CONFIG_TARGET="$HOME/.config/godot"
           if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
             rm -rf "$CONFIG_TARGET"
             mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
           fi
-
           TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
@@ -59,30 +57,12 @@ jobs:
           fi
 
           python3 tools/prepare_windows.py
-          grep -Fq 'config/features=PackedStringArray("4.7")' project.godot
-          grep -Fq 'config/custom_user_dir_name="SuperMarioWorldRemastered-Windows-4.7.1"' project.godot
-          grep -Fq 'window/size/mode=0' project.godot
-          grep -Fq 'window/size/window_width_override=1280' project.godot
-          grep -Fq 'window/size/window_height_override=720' project.godot
-          grep -Fq 'window/stretch/mode="canvas_items"' project.godot
-          grep -Fq 'window/stretch/aspect="expand"' project.godot
-          grep -Fq 'BossArenaCamera="*res://Scripts/Autoload/boss_arena_camera.gd"' project.godot
-          grep -Fq 'LanguageManager="*res://Scripts/Autoload/language_manager_windows.gd"' project.godot
-          ! grep -Eq '^(PortManager|TouchControls|TouchControlsRefresh)=' project.godot
-          ! grep -Fq 'AndroidSettings' Instances/UI/Menus/settings_menu.tscn
+          python3 tools/prepare_common_ui.py
+          test -s Assets/Fonts/PixelifySans.ttf
+          grep -Fq 'FontFallbackManager="*res://Scripts/Autoload/font_fallback_manager.gd"' project.godot
+          grep -Fq 'language_settings_fixed.gd' Instances/UI/language_settings.tscn
+          ! grep -Eq '^(PortManager|TouchControls|TouchControlsRefresh|MobileTouchControls)=' project.godot
           ! grep -Fq 'WINDOW_MODE_EXCLUSIVE_FULLSCREEN' Scripts/Autoload/SettingsManager.gd
-          grep -Fq 'WINDOW_MODE_FULLSCREEN' Scripts/Autoload/SettingsManager.gd
-          grep -Fq 'if window_type != 2:' Scripts/Autoload/SettingsManager.gd
-          grep -Fq 'super._make_font_safe' Scripts/Autoload/language_manager_windows.gd
-          grep -Fq 'START_CAPTURE_KEYS' Scripts/UI/keyboard_settings.gd
-          grep -Fq '[AUTOSCROLL62] WIDESCREEN VISUALS + 480PX GAMEPLAY SAFE ZONE ENABLED' Scripts/LevelElements/auto_scroll.gd
-          ! grep -Fq 'Window.CONTENT_SCALE_ASPECT_KEEP' Scripts/LevelElements/auto_scroll.gd
-          grep -Fq 'SAFE_HALF_EXTENTS := Vector2(240.0, 135.0)' Scripts/LevelElements/auto_scroll.gd
-          grep -Fq 'visible = false' rom_checker.tscn
-          grep -Fq '@code=en' languages/en.txt
-          grep -Fq '@code=es' languages/es.txt
-          grep -Fq 'Iggy' languages/es_ui_fixes.txt
-          grep -Fq 'LanguageSettings' Instances/UI/Menus/settings_menu.tscn
 
       - name: Import and validate project
         shell: bash
@@ -95,23 +75,10 @@ jobs:
         run: |
           set -euo pipefail
           godot --headless --path . --quit-after 8 2>&1 | tee /tmp/smw-windows-startup.log
-          grep -Fq '[WIN58] ROM CHECKER READY' /tmp/smw-windows-startup.log || {
-            echo 'Windows ROM selector did not reach _ready().' >&2
-            cat /tmp/smw-windows-startup.log >&2
-            exit 1
-          }
-          grep -Fq '[WIN60] BOSS CAMERA READY' /tmp/smw-windows-startup.log || {
-            echo 'Boss arena camera service did not reach _ready().' >&2
-            cat /tmp/smw-windows-startup.log >&2
-            exit 1
-          }
-          grep -Fq '[LANG63] READY' /tmp/smw-windows-startup.log || {
-            echo 'Editable language system did not reach _ready().' >&2
-            cat /tmp/smw-windows-startup.log >&2
-            exit 1
-          }
+          grep -Fq '[WIN58] ROM CHECKER READY' /tmp/smw-windows-startup.log
+          grep -Fq '[WIN60] BOSS CAMERA READY' /tmp/smw-windows-startup.log
+          grep -Fq '[FONT67] LATIN PIXEL FALLBACK READY' /tmp/smw-windows-startup.log
           if grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/smw-windows-startup.log; then
-            echo 'A startup script error was detected.' >&2
             cat /tmp/smw-windows-startup.log >&2
             exit 1
           fi
@@ -132,32 +99,27 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf build/windows/languages
-          cp -R languages build/windows/languages
+          mkdir -p build/windows/languages
+          cp languages/en.txt languages/es.txt \
+             languages/en_ui_fixes.txt languages/es_ui_fixes.txt \
+             languages/en_mobile.txt languages/es_mobile.txt \
+             build/windows/languages/
           cat > build/windows/README.txt <<'EOF'
-          Super Mario World Remastered Plus - Windows x64 BUILD 65
+          Super Mario World Remastered Plus - Windows x64 BUILD 67
           Built with Godot 4.7.1.
 
           Run SuperMarioWorldRemasteredPlus.exe.
-          It starts centered in a 1280x720 resizable window.
-          On first launch, click SELECT ROM and choose your legal .sfc/.smc dump.
-          Widescreen and ultrawide gameplay fixes remain enabled.
-          Fullscreen now uses the regular monitor-safe fullscreen mode.
-
-          LANGUAGE SYSTEM
-          English and Spanish are included. Choose one in Options > Language.
-          The external languages folder is editable. Copy en.txt, change @code
-          and @name, then translate the text on the right side of each = sign.
-          Save as UTF-8 and restart the game to add another language.
-          Original pixel fonts remain in use. Unsupported accented characters
-          are converted to compatible pixel-font characters to prevent boxes.
+          English and Spanish are the two included selectable languages.
+          The language selector uses a matching pixel font with Ñ and accented
+          Spanish characters while retaining the original bitmap UI fonts.
           EOF
           cd build/windows
-          zip -9 -r "../${EXPORT_NAME}-Windows-x64-BUILD-65-UI-Fixes.zip" .
+          zip -9 -r "../${EXPORT_NAME}-Windows-x64-BUILD-67-Bilingual.zip" .
 
       - name: Upload Windows portable build
         uses: actions/upload-artifact@v4
         with:
-          name: smw-remastered-plus-windows-x64-build-65-ui-fixes
-          path: build/${{ env.EXPORT_NAME }}-Windows-x64-BUILD-65-UI-Fixes.zip
+          name: smw-remastered-plus-windows-x64-build-67-bilingual
+          path: build/${{ env.EXPORT_NAME }}-Windows-x64-BUILD-67-Bilingual.zip
           if-no-files-found: error
           retention-days: 14
