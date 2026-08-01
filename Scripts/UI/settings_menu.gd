@@ -73,8 +73,16 @@ func apply_settings() -> void:
 	SettingsManager.save_settings()
 
 func _adapt_widescreen_layout() -> void:
-	# Keep the header aligned to the viewport edges when EXPAND reveals more
-	# horizontal game space on ultrawide displays.
+	# Keep every options page centered and give the title/value rows a little
+	# more horizontal room. The previous asymmetric 10%-88.3% area made long
+	# English and Spanish labels collide with their values.
+	for section in sections:
+		if is_instance_valid(section):
+			section.anchor_left = 0.08
+			section.anchor_right = 0.92
+			section.offset_left = 0.0
+			section.offset_right = 0.0
+
 	$TitleHeader.anchor_left = 0.0
 	$TitleHeader.anchor_right = 1.0
 	$TitleHeader.offset_left = 16.0
@@ -83,3 +91,31 @@ func _adapt_widescreen_layout() -> void:
 	$HSeparator.anchor_right = 0.5
 	$HSeparator.offset_left = -56.0
 	$HSeparator.offset_right = 56.0
+
+	# These credits were positioned at y=1 and one extended beyond the right
+	# edge, so fullscreen clipped the upper half of both lines. Keep them fully
+	# inside the frame and correct the original Bowser typo.
+	$Label3.anchor_left = 0.0
+	$Label3.anchor_top = 0.0
+	$Label3.anchor_right = 0.0
+	$Label3.anchor_bottom = 0.0
+	$Label3.offset_left = 10.0
+	$Label3.offset_top = 5.0
+	$Label3.offset_right = 220.0
+	$Label3.offset_bottom = 19.0
+	$Label3.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+
+	$Label4.anchor_left = 1.0
+	$Label4.anchor_top = 0.0
+	$Label4.anchor_right = 1.0
+	$Label4.anchor_bottom = 0.0
+	$Label4.offset_left = -220.0
+	$Label4.offset_top = 5.0
+	$Label4.offset_right = -10.0
+	$Label4.offset_bottom = 19.0
+	$Label4.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	$Label4.text = "Mod created by Bowser"
+
+	$Label2.offset_left = -240.0
+	$Label2.offset_right = -10.0
+	$Label2.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
