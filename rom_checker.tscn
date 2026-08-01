@@ -1,9 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://dvbp0nouhoin8"]
+[gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
 [ext_resource type="Script" uid="uid://0b08t70dww8i" path="res://Scripts/UI/rom_checker.gd" id="1_tqt67"]
-[ext_resource type="Script" path="res://Android/touch_controls.gd" id="3_touch_controls"]
-[ext_resource type="Script" path="res://Android/rom_picker_probe.gd" id="4_rom_picker_probe"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -16,17 +14,29 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxDebug"]
+bg_color = Color(0.08, 0.045, 0.015, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.58, 0.16, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+content_margin_left = 7.0
+content_margin_top = 4.0
+content_margin_right = 7.0
+content_margin_bottom = 4.0
 
 [node name="RomChecker" type="Node"]
 script = ExtResource("1_tqt67")
-
-[node name="TouchControls" type="CanvasLayer" parent="."]
-script = ExtResource("3_touch_controls")
-
-[node name="RomPickerProbe" type="CanvasLayer" parent="."]
-process_mode = 3
-layer = 2000
-script = ExtResource("4_rom_picker_probe")
 
 [node name="RomFileDialog" type="FileDialog" parent="."]
 process_mode = 3
@@ -61,68 +71,141 @@ mouse_filter = 2
 
 [node name="RomPanel" type="PanelContainer" parent="."]
 z_index = 110
-anchors_preset = 8
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
 offset_left = -190.0
-offset_top = -103.0
+offset_top = 5.0
 offset_right = 190.0
-offset_bottom = 103.0
+offset_bottom = 160.0
 grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleBoxPanel")
 
 [node name="Content" type="VBoxContainer" parent="RomPanel"]
 layout_mode = 2
 mouse_filter = 1
-theme_override_constants/separation = 10
+theme_override_constants/separation = 5
 
 [node name="Title" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_font_sizes/font_size = 17
-text = "ROM PICKER DIAGNOSTIC"
+theme_override_font_sizes/font_size = 15
+text = "ROM PICKER — BUILD 48"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_font_sizes/font_size = 10
-text = "Tap SELECT ROM once. The panel below will record the touch,\nthe Android API result, and whether a callback arrives."
+theme_override_font_sizes/font_size = 8
+text = "Tap SELECT ROM once. The orange panel records every event."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="Status" type="Label" parent="RomPanel/Content"]
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
-theme_override_font_sizes/font_size = 10
-text = "Diagnostic probe is starting..."
+theme_override_font_sizes/font_size = 8
+text = "Main diagnostic script is loading..."
 horizontal_alignment = 1
+vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="SelectRomButton" type="Button" parent="RomPanel/Content"]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 mouse_filter = 0
 focus_mode = 0
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14
 text = "SELECT ROM"
 
 [node name="Hint" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
-theme_override_font_sizes/font_size = 8
-text = "BUILD 47 DIAGNOSTIC • Use COPY REPORT after the test"
+theme_override_font_sizes/font_size = 7
+text = "No gameplay touch overlay • Main-script detector"
 horizontal_alignment = 1
+
+[node name="DebugPanel" type="PanelContainer" parent="."]
+z_index = 120
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -228.0
+offset_top = -104.0
+offset_right = 228.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBoxDebug")
+
+[node name="DebugContent" type="VBoxContainer" parent="DebugPanel"]
+layout_mode = 2
+mouse_filter = 1
+theme_override_constants/separation = 2
+
+[node name="Heartbeat" type="Label" parent="DebugPanel/DebugContent"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.32, 1)
+theme_override_font_sizes/font_size = 8
+text = "MAIN NOT INITIALIZED"
+horizontal_alignment = 1
+
+[node name="LastEvent" type="Label" parent="DebugPanel/DebugContent"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 7
+text = "LAST: waiting for main script"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="ApiStatus" type="Label" parent="DebugPanel/DebugContent"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 7
+text = "API: waiting for main script"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="DebugPanel/DebugContent"]
+layout_mode = 2
+mouse_filter = 1
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="TestPickerButton" type="Button" parent="DebugPanel/DebugContent/Buttons"]
+custom_minimum_size = Vector2(105, 22)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 7
+text = "TEST PICKER"
+
+[node name="CopyReportButton" type="Button" parent="DebugPanel/DebugContent/Buttons"]
+custom_minimum_size = Vector2(105, 22)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 7
+text = "COPY REPORT"
+
+[node name="ClearButton" type="Button" parent="DebugPanel/DebugContent/Buttons"]
+custom_minimum_size = Vector2(70, 22)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 7
+text = "CLEAR"
 
 [node name="Success" type="Label" parent="."]
 visible = false
-z_index = 120
+z_index = 130
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
