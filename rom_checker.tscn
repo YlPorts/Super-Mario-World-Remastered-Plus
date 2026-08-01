@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
-[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build52.gd" id="1_build52"]
+[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build53.gd" id="1_build53"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -36,7 +36,7 @@ content_margin_right = 7.0
 content_margin_bottom = 6.0
 
 [node name="RomChecker" type="Node"]
-script = ExtResource("1_build52")
+script = ExtResource("1_build53")
 
 [node name="RomFileDialog" type="FileDialog" parent="."]
 process_mode = 3
@@ -90,14 +90,14 @@ theme_override_constants/separation = 6
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 15
-text = "ROM PICKER — BUILD 52"
+text = "ROM PICKER — BUILD 53"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 8
-text = "Direct Android Storage Access Framework selector."
+text = "Android ContentResolver copies the selected content URI privately."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -107,7 +107,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
 theme_override_font_sizes/font_size = 8
-text = "Loading BUILD 52 Android SAF script..."
+text = "Loading BUILD 53 ContentResolver script..."
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
@@ -126,7 +126,7 @@ layout_mode = 2
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 7
-text = "DisplayServer.file_dialog_show • content:// URI • private ROM copy"
+text = "SAF content:// URI → ContentResolver → private baserom.sfc"
 horizontal_alignment = 1
 
 [node name="DebugPanel" type="PanelContainer" parent="."]
@@ -154,7 +154,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.32, 1)
 theme_override_font_sizes/font_size = 8
-text = "BUILD 52 SCRIPT NOT LOADED"
+text = "BUILD 53 SCRIPT NOT LOADED"
 horizontal_alignment = 1
 
 [node name="LastEvent" type="Label" parent="DebugPanel/DebugContent"]
@@ -172,7 +172,7 @@ custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 7
-text = "SAF: waiting for script"
+text = "ANDROID COPY: waiting for script"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
