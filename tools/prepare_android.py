@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Prepare the Godot project for Android export.
 
-The script is intentionally idempotent. It keeps the large upstream
-project.godot untouched in Git and applies only the Android-specific settings
-inside the CI workspace before exporting.
+The script is idempotent so local builds and GitHub Actions use the same
+mobile renderer, autoloads, landscape orientation and ultrawide scaling.
 """
 
 from __future__ import annotations
@@ -13,7 +12,10 @@ import re
 import sys
 
 PROJECT_FILE = Path(__file__).resolve().parents[1] / "project.godot"
-AUTOLOAD_LINE = 'TouchControls="*res://Android/touch_controls.gd"'
+AUTOLOADS = {
+    "PortManager": '"*res://Android/port_manager.gd"',
+    "TouchControls": '"*res://Android/touch_controls.gd"',
+}
 
 
 def ensure_setting(text: str, section: str, key: str, value: str) -> str:
@@ -36,10 +38,10 @@ def ensure_setting(text: str, section: str, key: str, value: str) -> str:
     return text[: insert_at + 1] + f"\n{line}\n" + text[insert_at + 1 :]
 
 
-def ensure_autoload(text: str) -> str:
-    if re.search(r"(?m)^TouchControls=", text):
-        return re.sub(r"(?m)^TouchControls=.*$", AUTOLOAD_LINE, text, count=1)
-    return ensure_setting(text, "autoload", "TouchControls", '"*res://Android/touch_controls.gd"')
+def ensure_autoload(text: str, name: str, value: str) -> str:
+    if re.search(rf"(?m)^{re.escape(name)}=", text):
+        return re.sub(rf"(?m)^{re.escape(name)}=.*$", f"{name}={value}", text, count=1)
+    return ensure_setting(text, "autoload", name, value)
 
 
 def validate_input_actions(text: str) -> list[str]:
@@ -53,6 +55,10 @@ def validate_input_actions(text: str) -> list[str]:
         "spin_jump_0",
         "dive_0",
         "pause",
+        "ui_tab_left",
+        "ui_tab_right",
+        "ui_back",
+        "apply_settings",
     )
     return [action for action in expected if not re.search(rf"(?m)^{re.escape(action)}=\{{", text)]
 
@@ -71,13 +77,19 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    text = ensure_autoload(text)
+    for name, value in AUTOLOADS.items():
+        text = ensure_autoload(text, name, value)
+
     text = ensure_setting(text, "display", "window/handheld/orientation", "0")
+    text = ensure_setting(text, "display", "window/stretch/mode", '"canvas_items"')
+    text = ensure_setting(text, "display", "window/stretch/aspect", '"expand"')
     text = ensure_setting(text, "rendering", "renderer/rendering_method.mobile", '"gl_compatibility"')
     text = ensure_setting(text, "rendering", "renderer/rendering_method", '"gl_compatibility"')
+    text = ensure_setting(text, "rendering", "textures/default_filters/use_nearest_mipmap_filter", "false")
+    text = ensure_setting(text, "rendering", "2d/snap/snap_2d_transforms_to_pixel", "true")
 
     PROJECT_FILE.write_text(text, encoding="utf-8", newline="\n")
-    print("Android touch controls and mobile renderer settings are ready.")
+    print("Android ROM selector, touch controls and ultrawide settings are ready.")
     return 0
 
 
