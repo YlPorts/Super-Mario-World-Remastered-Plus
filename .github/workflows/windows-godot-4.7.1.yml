@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
       - windows-godot-4.7.1
   pull_request:
     branches:
@@ -35,7 +34,7 @@ jobs:
           ref: windows-godot-4.7.1
           lfs: true
 
-      - name: Configure Godot 4.7.1 desktop project
+      - name: Configure safe Godot 4.7.1 desktop project
         shell: bash
         run: |
           set -euo pipefail
@@ -61,9 +60,14 @@ jobs:
 
           python3 tools/prepare_windows.py
           grep -Fq 'config/features=PackedStringArray("4.7")' project.godot
+          grep -Fq 'config/custom_user_dir_name="SuperMarioWorldRemastered-Windows-4.7.1"' project.godot
+          grep -Fq 'window/size/mode=0' project.godot
+          grep -Fq 'window/size/window_width_override=1280' project.godot
+          grep -Fq 'window/size/window_height_override=720' project.godot
           grep -Fq 'window/stretch/mode="canvas_items"' project.godot
           grep -Fq 'window/stretch/aspect="expand"' project.godot
           ! grep -Eq '^(PortManager|TouchControls|TouchControlsRefresh)=' project.godot
+          ! grep -Fq 'WINDOW_MODE_EXCLUSIVE_FULLSCREEN' Scripts/Autoload/SettingsManager.gd
 
       - name: Import and validate project
         shell: bash
@@ -87,20 +91,22 @@ jobs:
         run: |
           set -euo pipefail
           cat > build/windows/README.txt <<'EOF'
-          Super Mario World Remastered Plus - Windows x64
+          Super Mario World Remastered Plus - Windows x64 safe windowed build
           Built with Godot 4.7.1.
 
           Run SuperMarioWorldRemasteredPlus.exe.
-          The window is resizable and expands the visible game area for
-          widescreen and ultrawide displays. No Android touch controls are loaded.
+          It starts centered in a 1280x720 resizable window.
+          Widescreen and ultrawide sizes expand the visible horizontal area.
+          Exclusive fullscreen is disabled to avoid black-screen lockups.
+          No Android touch controls are loaded.
           EOF
           cd build/windows
-          zip -9 -r "../${EXPORT_NAME}-Windows-x64-Godot-4.7.1.zip" .
+          zip -9 -r "../${EXPORT_NAME}-Windows-x64-Godot-4.7.1-Safe-Windowed.zip" .
 
       - name: Upload Windows portable build
         uses: actions/upload-artifact@v4
         with:
-          name: smw-remastered-plus-windows-x64-godot-4.7.1
-          path: build/${{ env.EXPORT_NAME }}-Windows-x64-Godot-4.7.1.zip
+          name: smw-remastered-plus-windows-x64-godot-4.7.1-safe-windowed
+          path: build/${{ env.EXPORT_NAME }}-Windows-x64-Godot-4.7.1-Safe-Windowed.zip
           if-no-files-found: error
           retention-days: 14
