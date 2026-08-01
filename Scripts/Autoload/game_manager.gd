@@ -103,8 +103,44 @@ const RESERVE_ITEM_DROP = preload("res://Instances/Parts/reserve_item_drop.tscn"
 signal message_closed
 signal star_ended
 
+@onready var game_over_text: AnimationPlayer = $UI/GameOverText/AnimationPlayer
+@onready var circle_close: AnimationPlayer = $UI/CircleClose/Animations
+@onready var game_over_game_sprite: Sprite2D = $UI/GameOverText/Game
+@onready var game_over_over_sprite: Sprite2D = $UI/GameOverText/Over
+@onready var game_over_backdrop: ColorRect = $UI/GameOverText/ColorRect
+@onready var circle_close_rect: ColorRect = $UI/CircleClose
+
 func _enter_tree() -> void:
 	load_addons()
+
+func _ready() -> void:
+	# These sprites intentionally start outside the original 480x270 canvas.
+	# Root viewport expansion made the right-hand "OVER" sprite visible on
+	# ultrawide phones, so keep all global transition visuals explicitly hidden
+	# until the corresponding animation is requested.
+	_hide_game_over_visuals()
+	game_over_backdrop.hide()
+	circle_close.play("RESET")
+	circle_close_rect.hide()
+
+func _show_game_over_visuals() -> void:
+	game_over_game_sprite.show()
+	game_over_over_sprite.show()
+	var viewport_size := get_viewport().get_visible_rect().size
+	if viewport_size.x > 481.0:
+		# The legacy slide-in animation is hard-coded around a 480 px canvas.
+		# Center the two halves directly when extra horizontal world is visible.
+		game_over_text.stop()
+		game_over_game_sprite.position = Vector2(viewport_size.x * 0.5 - 24.0, viewport_size.y * 0.5)
+		game_over_over_sprite.position = Vector2(viewport_size.x * 0.5 + 24.0, viewport_size.y * 0.5)
+	else:
+		game_over_text.play("Show")
+
+func _hide_game_over_visuals() -> void:
+	game_over_text.stop()
+	game_over_text.play("RESET")
+	game_over_game_sprite.hide()
+	game_over_over_sprite.hide()
 
 func _process(delta: float) -> void:
 	if is_instance_valid(player):
@@ -162,13 +198,11 @@ func show_message(message: Texture, show_time := 1) -> void:
 	get_tree().paused = false
 
 
-@onready var game_over_text: AnimationPlayer = $UI/GameOverText/AnimationPlayer
-@onready var circle_close: AnimationPlayer = $UI/CircleClose/Animations
-
 func game_over() -> void:
+	circle_close_rect.show()
 	circle_close.play("Close")
 	await circle_close.animation_finished
-	game_over_text.play("Show")
+	_show_game_over_visuals()
 	SoundManager.play_ui_sound(SoundManager.game_over)
 	await get_tree().create_timer(8).timeout
 	SaveManager.load_file(SaveManager.selected_file)
@@ -186,8 +220,9 @@ func game_over() -> void:
 		TransitionManager.transition_to_map(GameManager.current_map_path, GameManager.current_level, false)
 	GameManager.reset_values()
 	await get_tree().create_timer(0.5, true).timeout
-	game_over_text.play("RESET")
+	_hide_game_over_visuals()
 	circle_close.play("RESET")
+	circle_close_rect.hide()
 
 func apply_save() -> void:
 	var save = SaveManager.current_save
@@ -252,6 +287,7 @@ func reset_values() -> void:
 		yoshi_stored = false
 
 func time_out() -> void:
+	circle_close_rect.show()
 	circle_close.play("Close")
 	await circle_close.animation_finished
 	game_over_text.play("Timeout")
@@ -264,8 +300,9 @@ func time_out() -> void:
 		TransitionManager.transition_to_map(GameManager.current_map_path, GameManager.current_level, false)
 	GameManager.reset_values()
 	await get_tree().create_timer(0.5, true).timeout
-	game_over_text.play("RESET")
+	_hide_game_over_visuals()
 	circle_close.play("RESET")
+	circle_close_rect.hide()
 
 func add_custom_autoload(autoload) -> void:
 	if autoload is String:
