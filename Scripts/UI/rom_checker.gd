@@ -1,7 +1,10 @@
 extends Node
 
-const PORT_MANAGER_SCRIPT := "res://Android/port_manager.gd"
-const TOUCH_CONTROLS_SCRIPT := "res://Android/touch_controls.gd"
+# Compile-time references force these Android services into the exported APK.
+# The previous runtime load() calls could return null after export because the
+# scripts were not statically referenced by the startup scene.
+const PORT_MANAGER_SCRIPT: Script = preload("res://Android/port_manager.gd")
+const TOUCH_CONTROLS_SCRIPT: Script = preload("res://Android/touch_controls.gd")
 
 var can_check := true
 var _port_manager: Node
@@ -26,17 +29,16 @@ func _process(_delta: float) -> void:
 		open_rom_picker()
 
 
-func _ensure_root_service(service_name: String, script_path: String) -> Node:
+func _ensure_root_service(service_name: String, service_script: Script) -> Node:
 	var existing := get_node_or_null("/root/" + service_name)
 	if existing != null:
 		return existing
 
-	var service_script := load(script_path)
 	if service_script == null:
-		push_error("Could not load Android service: " + script_path)
+		push_error("Android service was not compiled into the APK: " + service_name)
 		return null
 
-	var service: Node = service_script.new()
+	var service := service_script.new() as Node
 	if service == null:
 		push_error("Could not create Android service: " + service_name)
 		return null
@@ -68,7 +70,7 @@ func open_rom_picker() -> void:
 	if not can_check:
 		return
 	if not _refresh_port_manager():
-		show_rom_prompt("The ROM picker could not start. Reinstall this updated APK and try again.", true)
+		show_rom_prompt("The ROM service did not load. Install the newest APK build.", true)
 		return
 	$RomPanel/Content/Status.text = "Opening Android file picker..."
 	$RomPanel/Content/Status.modulate = Color(1.0, 0.86, 0.35, 1.0)
