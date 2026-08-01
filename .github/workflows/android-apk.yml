@@ -71,8 +71,8 @@ jobs:
         run: |
           set -euo pipefail
           godot --headless --path . --quit-after 8 2>&1 | tee /tmp/smw-startup.log
-          grep -Fq "[BUILD52] READY" /tmp/smw-startup.log || {
-            echo "BUILD 52 startup script did not reach _ready()." >&2
+          grep -Fq "[BUILD53] READY" /tmp/smw-startup.log || {
+            echo "BUILD 53 startup script did not reach _ready()." >&2
             cat /tmp/smw-startup.log >&2
             exit 1
           }
