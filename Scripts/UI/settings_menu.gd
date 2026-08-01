@@ -9,31 +9,53 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_adapt_widescreen_layout)
 	_adapt_widescreen_layout()
 	await get_tree().process_frame
+	_sync_current_section()
 	set_starting_values()
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
+	_sync_current_section()
+	if _current_section_blocks_parent_input():
+		$TitleHeader/SettingsHeader.text = current_section.title
+		return
+
 	if Input.is_action_just_pressed("ui_tab_left"):
 		selected_index -= 1
 		SoundManager.play_ui_sound(SoundManager.select)
 	elif Input.is_action_just_pressed("ui_tab_right"):
 		selected_index += 1
 		SoundManager.play_ui_sound(SoundManager.select)
+
 	if Input.is_action_just_pressed("debug_clear"):
-		SettingsManager.settings_file = SettingsManager.settings_template
+		SettingsManager.settings_file = SettingsManager.settings_template.duplicate(true)
 		SoundManager.play_ui_sound(SoundManager.cape_fly)
 		SettingsManager.save_settings()
 		SettingsManager.apply_settings(SettingsManager.get_file())
-	selected_index = wrap(selected_index, 0, sections.size())
-	for i in sections:
-		i.visible = (sections[selected_index]) == i
-		if i.visible:
-			current_section = i
-		i.selected = i.visible
+		set_starting_values()
+
+	_sync_current_section()
 	$TitleHeader/SettingsHeader.text = current_section.title
+
 	if Input.is_action_just_pressed("apply_settings"):
 		apply_settings()
 	if Input.is_action_just_pressed("ui_back"):
 		TransitionManager.transition_to_menu("res://Instances/UI/Menus/title_screen.tscn", self)
+
+func _sync_current_section() -> void:
+	if sections.is_empty():
+		return
+	selected_index = wrap(selected_index, 0, sections.size())
+	for section in sections:
+		section.visible = sections[selected_index] == section
+		section.selected = section.visible
+		if section.visible:
+			current_section = section
+
+func _current_section_blocks_parent_input() -> bool:
+	if current_section == null:
+		return false
+	if current_section.has_method("blocks_parent_input"):
+		return current_section.blocks_parent_input()
+	return false
 
 func set_starting_values() -> void:
 	for i in sections:
