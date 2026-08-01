@@ -10,3 +10,4 @@ This branch keeps the original desktop startup flow and builds with Godot 4.7.1.
 - `canvas_items` with `expand` allows widescreen and ultrawide windows to reveal additional horizontal game space instead of stretching the image out of proportion.
 - Exclusive fullscreen is replaced with a safer borderless maximized window.
 - GitHub Actions publishes a Windows x64 portable ZIP separately from the Android APK workflow.
+- Safe-window validation checks the generated project before export.
