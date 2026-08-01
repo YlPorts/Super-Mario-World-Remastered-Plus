@@ -1,6 +1,5 @@
 extends CanvasLayer
-## Runtime multitouch overlay for Android.
-## Uses Input actions directly, preserving the game's existing keyboard/gamepad code.
+## SNES-inspired multitouch controls for Android.
 
 const ZONE_ACTIONS := {
 	&"left": [&"move_left_0", &"ui_left"],
@@ -13,7 +12,8 @@ const ZONE_ACTIONS := {
 	&"dive": [&"dive_0"],
 	&"tab_left": [&"ui_tab_left"],
 	&"tab_right": [&"ui_tab_right"],
-	&"pause": [&"pause", &"apply_settings"],
+	&"select": [&"ui_select", &"open_inventory"],
+	&"start": [&"pause", &"apply_settings"],
 }
 
 const BUTTON_LABELS := {
@@ -27,12 +27,13 @@ const BUTTON_LABELS := {
 	&"dive": "Y",
 	&"tab_left": "L",
 	&"tab_right": "R",
-	&"pause": "START",
+	&"select": "SELECT",
+	&"start": "START",
 }
 
 const BASE_SIZE := Vector2(480.0, 270.0)
 const SIZE_SCALES := [0.75, 0.9, 1.0, 1.15, 1.3]
-const OPACITY_VALUES := [0.2, 0.35, 0.5, 0.65, 0.8]
+const OPACITY_VALUES := [0.25, 0.4, 0.55, 0.7, 0.85]
 
 var _device_active := false
 var _root: Control
@@ -61,6 +62,7 @@ func _ready() -> void:
 	var port_manager := get_node_or_null("/root/PortManager")
 	if port_manager != null:
 		port_manager.settings_applied.connect(_apply_preferences)
+		port_manager.rom_imported.connect(_on_rom_imported)
 	_apply_preferences()
 
 
@@ -68,6 +70,10 @@ func _apply_preferences() -> void:
 	var settings_manager := get_node_or_null("/root/SettingsManager")
 	_settings = settings_manager.settings_file if settings_manager != null else {}
 	_rebuild_layout()
+
+
+func _on_rom_imported(_success: bool, _message: String) -> void:
+	_update_visibility()
 
 
 func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
@@ -106,7 +112,11 @@ func _update_visibility() -> void:
 	var enabled := bool(_settings.get("touch_controls_enabled", true))
 	var auto_hide := bool(_settings.get("touch_controls_auto_hide_gamepad", true))
 	var gamepad_connected := not Input.get_connected_joypads().is_empty()
-	_root.visible = enabled and not (auto_hide and gamepad_connected)
+	var rom_ready := true
+	var port_manager := get_node_or_null("/root/PortManager")
+	if port_manager != null:
+		rom_ready = port_manager.rom_is_valid()
+	_root.visible = enabled and rom_ready and not (auto_hide and gamepad_connected)
 	if not _root.visible:
 		_release_all()
 
@@ -128,26 +138,48 @@ func _rebuild_layout() -> void:
 	var scale := clampf(minf(viewport_size.x / BASE_SIZE.x, viewport_size.y / BASE_SIZE.y), 0.75, 2.0)
 	scale *= control_scale
 
-	var dpad_size := 42.0 * scale
-	var dpad_center := Vector2(layout_rect.position.x + 70.0 * scale, layout_rect.end.y - 62.0 * scale)
-	_add_button(&"left", Rect2(dpad_center + Vector2(-dpad_size * 1.05, -dpad_size * 0.5), Vector2.ONE * dpad_size), false)
-	_add_button(&"right", Rect2(dpad_center + Vector2(dpad_size * 0.05, -dpad_size * 0.5), Vector2.ONE * dpad_size), false)
-	_add_button(&"up", Rect2(dpad_center + Vector2(-dpad_size * 0.5, -dpad_size * 1.05), Vector2.ONE * dpad_size), false)
-	_add_button(&"down", Rect2(dpad_center + Vector2(-dpad_size * 0.5, dpad_size * 0.05), Vector2.ONE * dpad_size), false)
-
-	var face_size := 49.0 * scale
-	_add_centered_button(&"jump", Vector2(layout_rect.end.x - 39.0 * scale, layout_rect.end.y - 48.0 * scale), face_size, true)
-	_add_centered_button(&"run", Vector2(layout_rect.end.x - 96.0 * scale, layout_rect.end.y - 33.0 * scale), face_size, true)
-	_add_centered_button(&"spin", Vector2(layout_rect.end.x - 48.0 * scale, layout_rect.end.y - 106.0 * scale), face_size, true)
-	_add_centered_button(&"dive", Vector2(layout_rect.end.x - 105.0 * scale, layout_rect.end.y - 91.0 * scale), face_size, true)
-
-	var shoulder_size := Vector2(40.0, 20.0) * scale
-	_add_button(&"tab_left", Rect2(Vector2(layout_rect.position.x + 10.0 * scale, layout_rect.position.y + 8.0 * scale), shoulder_size), false)
-	_add_button(&"tab_right", Rect2(Vector2(layout_rect.end.x - shoulder_size.x - 10.0 * scale, layout_rect.position.y + 8.0 * scale), shoulder_size), false)
-
-	var pause_size := Vector2(52.0, 20.0) * scale
-	_add_button(&"pause", Rect2(Vector2(layout_rect.get_center().x - pause_size.x * 0.5, layout_rect.position.y + 8.0 * scale), pause_size), false)
+	_build_dpad(layout_rect, scale)
+	_build_face_buttons(layout_rect, scale)
+	_build_system_buttons(layout_rect, scale)
 	_update_visibility()
+
+
+func _build_dpad(layout_rect: Rect2, scale: float) -> void:
+	var unit := 29.0 * scale
+	var center := Vector2(layout_rect.position.x + 68.0 * scale, layout_rect.end.y - 59.0 * scale)
+	var dpad_color := _with_control_opacity(Color(0.11, 0.12, 0.15, 1.0), 0.20)
+
+	_add_visual_only(Rect2(center - Vector2.ONE * unit * 0.5, Vector2.ONE * unit), false, dpad_color, Color(0.42, 0.44, 0.5, 0.9))
+	_add_control_button(&"left", Rect2(center + Vector2(-unit * 1.5, -unit * 0.5), Vector2.ONE * unit), false, dpad_color)
+	_add_control_button(&"right", Rect2(center + Vector2(unit * 0.5, -unit * 0.5), Vector2.ONE * unit), false, dpad_color)
+	_add_control_button(&"up", Rect2(center + Vector2(-unit * 0.5, -unit * 1.5), Vector2.ONE * unit), false, dpad_color)
+	_add_control_button(&"down", Rect2(center + Vector2(-unit * 0.5, unit * 0.5), Vector2.ONE * unit), false, dpad_color)
+
+
+func _build_face_buttons(layout_rect: Rect2, scale: float) -> void:
+	var size := 41.0 * scale
+	var right := layout_rect.end.x
+	var bottom := layout_rect.end.y
+	_add_centered_button(&"jump", Vector2(right - 42.0 * scale, bottom - 51.0 * scale), size, Color(0.82, 0.18, 0.25, 1.0))
+	_add_centered_button(&"run", Vector2(right - 91.0 * scale, bottom - 31.0 * scale), size, Color(0.92, 0.66, 0.14, 1.0))
+	_add_centered_button(&"spin", Vector2(right - 47.0 * scale, bottom - 101.0 * scale), size, Color(0.20, 0.48, 0.92, 1.0))
+	_add_centered_button(&"dive", Vector2(right - 96.0 * scale, bottom - 81.0 * scale), size, Color(0.22, 0.72, 0.38, 1.0))
+
+
+func _build_system_buttons(layout_rect: Rect2, scale: float) -> void:
+	var shoulder_size := Vector2(48.0, 19.0) * scale
+	var shoulder_color := _with_control_opacity(Color(0.15, 0.15, 0.20, 1.0), 0.16)
+	_add_control_button(&"tab_left", Rect2(layout_rect.position + Vector2(10.0, 8.0) * scale, shoulder_size), true, shoulder_color)
+	_add_control_button(&"tab_right", Rect2(Vector2(layout_rect.end.x - shoulder_size.x - 10.0 * scale, layout_rect.position.y + 8.0 * scale), shoulder_size), true, shoulder_color)
+
+	var pill_size := Vector2(49.0, 17.0) * scale
+	var gap := 7.0 * scale
+	var group_width := pill_size.x * 2.0 + gap
+	var left := layout_rect.get_center().x - group_width * 0.5
+	var top := layout_rect.end.y - 25.0 * scale
+	var pill_color := _with_control_opacity(Color(0.17, 0.16, 0.22, 1.0), 0.18)
+	_add_control_button(&"select", Rect2(Vector2(left, top), pill_size), true, pill_color)
+	_add_control_button(&"start", Rect2(Vector2(left + pill_size.x + gap, top), pill_size), true, pill_color)
 
 
 func _get_safe_layout_rect(viewport_size: Vector2) -> Rect2:
@@ -164,40 +196,50 @@ func _get_safe_layout_rect(viewport_size: Vector2) -> Rect2:
 	return Rect2(Vector2(safe_area.position) * ratio, Vector2(safe_area.size) * ratio)
 
 
-func _add_centered_button(zone: StringName, center: Vector2, diameter: float, circular: bool) -> void:
-	_add_button(zone, Rect2(center - Vector2.ONE * diameter * 0.5, Vector2.ONE * diameter), circular)
+func _add_centered_button(zone: StringName, center: Vector2, diameter: float, fill: Color) -> void:
+	_add_control_button(zone, Rect2(center - Vector2.ONE * diameter * 0.5, Vector2.ONE * diameter), true, _with_control_opacity(fill, 0.08))
 
 
-func _add_button(zone: StringName, rect: Rect2, circular: bool) -> void:
+func _add_control_button(zone: StringName, rect: Rect2, rounded: bool, fill: Color) -> void:
 	_zones[zone] = rect
-
-	var panel := Panel.new()
-	panel.name = String(zone).capitalize()
-	panel.position = rect.position
-	panel.size = rect.size
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var opacity_index := clampi(int(_settings.get("touch_controls_opacity", 1)), 0, OPACITY_VALUES.size() - 1)
-	var opacity: float = OPACITY_VALUES[opacity_index]
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.08, 0.1, opacity)
-	style.border_color = Color(1.0, 1.0, 1.0, minf(opacity + 0.2, 0.9))
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(int(rect.size.y * (0.5 if circular else 0.18)))
-	panel.add_theme_stylebox_override("panel", style)
-
+	var panel := _create_panel(rect, rounded, fill, Color(0.85, 0.87, 0.94, 0.9))
 	var label := Label.new()
 	label.text = BUTTON_LABELS.get(zone, "?")
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", maxi(8, int(rect.size.y * (0.3 if zone == &"pause" else 0.38))))
-	label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.92))
+	var small_label := zone in [&"tab_left", &"tab_right", &"select", &"start"]
+	label.add_theme_font_size_override("font_size", maxi(8, int(rect.size.y * (0.42 if small_label else 0.50))))
+	label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.98))
 	panel.add_child(label)
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
 	_root.add_child(panel)
 	_visuals[zone] = panel
+
+
+func _add_visual_only(rect: Rect2, rounded: bool, fill: Color, border: Color) -> void:
+	_root.add_child(_create_panel(rect, rounded, fill, border))
+
+
+func _create_panel(rect: Rect2, rounded: bool, fill: Color, border: Color) -> Panel:
+	var panel := Panel.new()
+	panel.position = rect.position
+	panel.size = rect.size
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(int(rect.size.y * (0.5 if rounded else 0.12)))
+	panel.add_theme_stylebox_override("panel", style)
+	return panel
+
+
+func _with_control_opacity(color: Color, extra := 0.0) -> Color:
+	var opacity_index := clampi(int(_settings.get("touch_controls_opacity", 1)), 0, OPACITY_VALUES.size() - 1)
+	var result := color
+	result.a = clampf(OPACITY_VALUES[opacity_index] + extra, 0.15, 0.95)
+	return result
 
 
 func _update_touch(index: int, position: Vector2) -> bool:
@@ -260,9 +302,11 @@ func _release_zone(zone: StringName) -> void:
 
 
 func _set_visual_pressed(zone: StringName, pressed: bool) -> void:
-	var panel: Panel = _visuals.get(zone)
+	var panel: Control = _visuals.get(zone)
 	if is_instance_valid(panel):
-		panel.modulate = Color(1.35, 1.35, 1.35, 1.0) if pressed else Color.WHITE
+		panel.scale = Vector2.ONE * (0.92 if pressed else 1.0)
+		panel.pivot_offset = panel.size * 0.5
+		panel.modulate = Color(1.18, 1.18, 1.18, 1.0) if pressed else Color.WHITE
 
 
 func _release_all() -> void:
