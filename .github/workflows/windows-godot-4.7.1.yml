@@ -6,9 +6,12 @@ on:
     branches:
       - main
       - windows-godot-4.7.1
+  pull_request:
+    branches:
+      - main
 
 concurrency:
-  group: windows-godot-4.7.1-${{ github.ref }}
+  group: windows-godot-4.7.1-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
