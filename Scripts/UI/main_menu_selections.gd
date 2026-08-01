@@ -22,13 +22,9 @@ var selected_index := 0
 var option_nodes := []
 
 func _ready() -> void:
-	# The original 132 px column was too narrow even for several English labels
-	# and made Spanish labels spill outside the title layout. Keep it centered but
-	# give every language a 264 px safe text column.
-	$VBoxContainer.anchor_left = 0.5
-	$VBoxContainer.anchor_right = 0.5
-	$VBoxContainer.offset_left = -132.0
-	$VBoxContainer.offset_right = 132.0
+	# Keep the authored 132 px menu column. BUILD 64 doubled its width, which
+	# moved the left-aligned labels far away from the logo in fullscreen. Longer
+	# translations are kept compact in the language packs instead.
 	for i in options.size():
 		if options[i] != "":
 			add_option_node(options[i], option_colours[i])
