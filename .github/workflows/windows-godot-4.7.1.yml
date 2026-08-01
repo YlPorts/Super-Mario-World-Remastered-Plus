@@ -5,9 +5,12 @@ on:
   push:
     branches:
       - windows-godot-4.7.1
+  pull_request:
+    branches:
+      - main
 
 concurrency:
-  group: windows-godot-4.7.1-${{ github.ref }}
+  group: windows-godot-4.7.1-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -28,6 +31,7 @@ jobs:
       - name: Checkout Windows branch
         uses: actions/checkout@v4
         with:
+          ref: windows-godot-4.7.1
           lfs: true
 
       - name: Configure Godot 4.7.1 desktop project
