@@ -1,7 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://dvbp0nouhoin8"]
+[gd_scene load_steps=6 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
 [ext_resource type="Script" uid="uid://0b08t70dww8i" path="res://Scripts/UI/rom_checker.gd" id="1_tqt67"]
+[ext_resource type="Script" path="res://Android/port_manager.gd" id="2_port_manager"]
+[ext_resource type="Script" path="res://Android/touch_controls.gd" id="3_touch_controls"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -17,6 +19,12 @@ corner_radius_bottom_left = 12
 
 [node name="RomChecker" type="Node"]
 script = ExtResource("1_tqt67")
+
+[node name="PortManager" type="Node" parent="."]
+script = ExtResource("2_port_manager")
+
+[node name="TouchControls" type="CanvasLayer" parent="."]
+script = ExtResource("3_touch_controls")
 
 [node name="TextureRect" type="TextureRect" parent="."]
 z_index = -20
@@ -88,7 +96,7 @@ text = "SELECT ROM"
 layout_mode = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 8
-text = "Tap the button again if you close the Android picker."
+text = "BUILD 43 • Tap again if you close the Android picker."
 horizontal_alignment = 1
 
 [node name="Success" type="Label" parent="."]
