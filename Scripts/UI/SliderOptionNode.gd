@@ -6,7 +6,6 @@ extends OptionNode
 @onready var right_arrow: TextureRect = $MarginContainer/Container/HBoxContainer/LeftArrow2
 
 var value := 1.0
-
 var val_jump := 0.05
 
 @export var option_title := ""
@@ -14,7 +13,7 @@ var val_jump := 0.05
 func _ready() -> void:
 	pass
 
-func update(delta: float) -> void:
+func update(_delta: float) -> void:
 	if highlighted:
 		if Input.is_action_just_pressed("ui_left"):
 			value -= val_jump
@@ -24,7 +23,7 @@ func update(delta: float) -> void:
 			SoundManager.play_ui_sound(SoundManager.menu)
 	$MarginContainer/Arrow.visible = highlighted
 	$MarginContainer/Container/HBoxContainer/HSlider.value = value * 100
-	label.text = "  " + option_title + ": " + (str(round(value * 100)) if value >= 0.01 else "0") + "%"
+	label.text = "  " + LanguageManager.text(option_title) + ": " + (str(round(value * 100)) if value >= 0.01 else "0") + "%"
 	value = clamp(value, 0, 1)
 	highest_value = value == 1
 	lowest_value = value <= 0.01
