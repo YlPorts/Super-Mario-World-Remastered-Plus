@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
-[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build49.gd" id="1_build49"]
+[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build50.gd" id="1_build50"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -36,13 +36,13 @@ content_margin_right = 7.0
 content_margin_bottom = 6.0
 
 [node name="RomChecker" type="Node"]
-script = ExtResource("1_build49")
+script = ExtResource("1_build50")
 
 [node name="RomFileDialog" type="FileDialog" parent="."]
 process_mode = 3
 access = 2
 file_mode = 0
-filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM")
+filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM;application/octet-stream,application/x-snes-rom")
 use_native_dialog = true
 mode_overrides_title = false
 title = "Select Super Mario World ROM"
@@ -90,14 +90,14 @@ theme_override_constants/separation = 6
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 15
-text = "ROM PICKER — BUILD 49"
+text = "ROM PICKER — BUILD 50"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 8
-text = "The picker opens on PRESS-DOWN, before you release your finger."
+text = "Select your own legal Super Mario World .sfc/.smc ROM."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -107,7 +107,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
 theme_override_font_sizes/font_size = 8
-text = "Loading fresh BUILD 49 script..."
+text = "Loading BUILD 50 import and launch script..."
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
@@ -119,14 +119,14 @@ mouse_filter = 0
 focus_mode = 0
 action_mode = 0
 theme_override_font_sizes/font_size = 14
-text = "SELECT ROM — PRESS NOW"
+text = "SELECT ROM AND START"
 
 [node name="Hint" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 7
-text = "New script path • no old script UID • no manual DisplayServer API"
+text = "Select • validate • save privately • launch game"
 horizontal_alignment = 1
 
 [node name="DebugPanel" type="PanelContainer" parent="."]
@@ -154,7 +154,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.32, 1)
 theme_override_font_sizes/font_size = 8
-text = "BUILD 49 SCRIPT NOT LOADED"
+text = "BUILD 50 SCRIPT NOT LOADED"
 horizontal_alignment = 1
 
 [node name="LastEvent" type="Label" parent="DebugPanel/DebugContent"]
@@ -172,12 +172,30 @@ custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 7
-text = "PICKER: waiting for script"
+text = "ROM: waiting for script"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
+[node name="Success" type="Label" parent="."]
+visible = false
+z_index = 130
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.55, 1, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 15
+text = "ROM VERIFIED! STARTING GAME..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [connection signal="canceled" from="RomFileDialog" to="." method="_on_file_dialog_canceled"]
 [connection signal="file_selected" from="RomFileDialog" to="." method="_on_file_selected"]
+[connection signal="files_selected" from="RomFileDialog" to="." method="_on_files_selected"]
 [connection signal="button_down" from="RomPanel/Content/SelectRomButton" to="." method="_on_select_button_down"]
 [connection signal="pressed" from="RomPanel/Content/SelectRomButton" to="." method="_on_select_pressed"]
