@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://8uyqq4rf0cl1"]
+[gd_scene load_steps=17 format=3 uid="uid://8uyqq4rf0cl1"]
 
 [ext_resource type="Script" uid="uid://c0cjtqsi4ln15" path="res://Scripts/UI/settings_menu.gd" id="1_nelhb"]
 [ext_resource type="Texture2D" uid="uid://gqv4p5bghklh" path="res://Assets/Sprites/UI/SettingsBG.png" id="2_g8p0s"]
@@ -12,7 +12,6 @@
 [ext_resource type="PackedScene" uid="uid://bucglb4sqi4jx" path="res://Instances/UI/sprite_settings.tscn" id="10_j2cak"]
 [ext_resource type="FontFile" uid="uid://bhqyq3yxbvqkd" path="res://Assets/Sprites/UI/HUD/HUDFont.png" id="11_hsiay"]
 [ext_resource type="AudioStream" uid="uid://brm5imjbfu1ar" path="res://Assets/Audio/BGM/SMW/Options.mp3" id="12_g8p0s"]
-[ext_resource type="PackedScene" path="res://Instances/UI/android_settings.tscn" id="13_android"]
 [ext_resource type="PackedScene" path="res://Instances/UI/keyboard_settings.tscn" id="14_keyboard"]
 
 [sub_resource type="Shader" id="Shader_gqxou"]
@@ -37,7 +36,7 @@ shader_parameter/offset = Vector2(0, 0)
 [node name="OptionsMenu" type="Node" node_paths=PackedStringArray("sections")]
 process_mode = 3
 script = ExtResource("1_nelhb")
-sections = [NodePath("DisplaySettings"), NodePath("AudioSettings"), NodePath("GameplaySettings"), NodePath("KeyboardSettings"), NodePath("AbilitySettings"), NodePath("SpriteSettings"), NodePath("AndroidSettings")]
+sections = [NodePath("DisplaySettings"), NodePath("AudioSettings"), NodePath("GameplaySettings"), NodePath("KeyboardSettings"), NodePath("AbilitySettings"), NodePath("SpriteSettings")]
 metadata/_edit_use_anchors_ = true
 
 [node name="BG" type="TextureRect" parent="."]
@@ -127,9 +126,6 @@ anchor_right = 0.85
 offset_right = 0.0
 offset_bottom = 0.0
 title = "Sprites"
-metadata/_edit_use_anchors_ = true
-
-[node name="AndroidSettings" parent="." instance=ExtResource("13_android")]
 metadata/_edit_use_anchors_ = true
 
 [node name="Label2" type="Label" parent="."]
