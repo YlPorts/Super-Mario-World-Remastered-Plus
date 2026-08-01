@@ -1,42 +1,41 @@
 extends Node
-## Editable TXT localization system for the Windows port.
-##
-## Built-in English and Spanish packs live in res://languages. The portable
-## Windows build also places them beside the EXE in a languages folder. Files in
-## that external folder override built-ins and additional .txt packs are loaded
-## automatically on the next launch.
+## Built-in bilingual localization for desktop and Android.
+## Only English and Spanish are exposed; external language packs are ignored.
 
 signal language_changed(code: String)
 
-const BUILTIN_LANGUAGE_DIR := "res://languages"
 const DEFAULT_LANGUAGE := "en"
+const LANGUAGE_ORDER := ["en", "es"]
+const LANGUAGE_PATHS := {
+	"en": "res://languages/en.txt",
+	"es": "res://languages/es.txt",
+}
+const LANGUAGE_NAMES := {
+	"en": "ENGLISH",
+	"es": "ESPAÑOL",
+}
 const RESCAN_SECONDS := 0.20
 const META_SOURCE_PREFIX := "_smwr_language_source_"
 const META_RENDERED_PREFIX := "_smwr_language_rendered_"
 
 var packs: Dictionary = {}
 var current_language := DEFAULT_LANGUAGE
-var external_language_dir := ""
-
 var _tracked: Array[WeakRef] = []
 var _tracked_ids: Dictionary = {}
 var _scan_elapsed := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	external_language_dir = _get_external_language_dir()
 	reload_language_packs()
-
 	var desired := DEFAULT_LANGUAGE
 	var settings_manager := get_node_or_null("/root/SettingsManager")
 	if settings_manager != null:
 		desired = str(settings_manager.settings_file.get("language", DEFAULT_LANGUAGE))
 	set_language(desired, false)
-
 	get_tree().node_added.connect(_on_node_added)
 	get_tree().node_removed.connect(_on_node_removed)
 	call_deferred("_register_tree", get_tree().root)
-	print("[LANG64] READY languages=", get_available_language_codes(), " selected=", current_language)
+	print("[LANG66] READY languages=", LANGUAGE_ORDER, " selected=", current_language)
 
 func _process(delta: float) -> void:
 	_scan_elapsed += delta
@@ -47,193 +46,80 @@ func _process(delta: float) -> void:
 
 func reload_language_packs() -> void:
 	packs.clear()
-	_load_language_directory(BUILTIN_LANGUAGE_DIR, false)
-	if not external_language_dir.is_empty():
-		_load_language_directory(external_language_dir, true)
-
+	for code in LANGUAGE_ORDER:
+		var path := str(LANGUAGE_PATHS.get(code, ""))
+		var pack := _parse_language_file(path)
+		pack["code"] = code
+		pack["name"] = LANGUAGE_NAMES[code]
+		packs[code] = pack
 	if not packs.has(DEFAULT_LANGUAGE):
-		packs[DEFAULT_LANGUAGE] = {
-			"code": DEFAULT_LANGUAGE,
-			"name": "English",
-			"fallback": "",
-			"entries": {},
-			"path": "",
-		}
+		packs[DEFAULT_LANGUAGE] = {"entries": {}, "fallback": ""}
 
 func set_language(code: String, save_setting := true) -> void:
 	var normalized := code.strip_edges().to_lower()
-	if not packs.has(normalized):
+	if not LANGUAGE_ORDER.has(normalized):
 		normalized = DEFAULT_LANGUAGE
 	current_language = normalized
-
 	if save_setting:
 		var settings_manager := get_node_or_null("/root/SettingsManager")
 		if settings_manager != null:
 			settings_manager.settings_file["language"] = current_language
 			settings_manager.save_settings()
-
 	_refresh_tracked_nodes(true)
 	language_changed.emit(current_language)
-	print("[LANG64] LANGUAGE CHANGED: ", current_language)
+	print("[LANG66] LANGUAGE CHANGED: ", current_language)
 
 func text(source_english: String) -> String:
 	var lookup := _normalize_source(source_english)
 	if lookup.is_empty():
 		return source_english
-
-	var pack: Dictionary = packs.get(current_language, {})
-	var entries: Dictionary = pack.get("entries", {})
+	var entries: Dictionary = packs.get(current_language, {}).get("entries", {})
 	if entries.has(lookup):
 		return str(entries[lookup])
-
-	var fallback_code := str(pack.get("fallback", DEFAULT_LANGUAGE)).to_lower()
-	if not fallback_code.is_empty() and packs.has(fallback_code):
-		var fallback_entries: Dictionary = packs[fallback_code].get("entries", {})
-		if fallback_entries.has(lookup):
-			return str(fallback_entries[lookup])
-
-	var english_entries: Dictionary = packs[DEFAULT_LANGUAGE].get("entries", {})
+	var english_entries: Dictionary = packs.get(DEFAULT_LANGUAGE, {}).get("entries", {})
 	if english_entries.has(lookup):
 		return str(english_entries[lookup])
 	return source_english
 
 func get_available_languages() -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	for code in packs.keys():
-		var pack: Dictionary = packs[code]
-		result.append({
-			"code": str(code),
-			"name": str(pack.get("name", code)),
-			"path": str(pack.get("path", "")),
-		})
-	result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var a_code := str(a["code"])
-		var b_code := str(b["code"])
-		if a_code == DEFAULT_LANGUAGE:
-			return true
-		if b_code == DEFAULT_LANGUAGE:
-			return false
-		if a_code == "es":
-			return true
-		if b_code == "es":
-			return false
-		return str(a["name"]).naturalnocasecmp_to(str(b["name"])) < 0
-	)
-	return result
+	return [
+		{"code": "en", "name": LANGUAGE_NAMES["en"]},
+		{"code": "es", "name": LANGUAGE_NAMES["es"]},
+	]
 
 func get_available_language_codes() -> Array[String]:
-	var result: Array[String] = []
-	for record in get_available_languages():
-		result.append(str(record["code"]))
-	return result
+	return ["en", "es"]
 
 func get_language_name(code: String) -> String:
-	if packs.has(code):
-		return str(packs[code].get("name", code))
-	return code
-
-func _get_external_language_dir() -> String:
-	if OS.has_feature("android"):
-		return "user://languages"
-	if OS.has_feature("editor"):
-		return ""
-	var executable := OS.get_executable_path()
-	if executable.is_empty():
-		return ""
-	return executable.get_base_dir().path_join("languages")
-
-func _load_language_directory(path: String, overwrite_metadata: bool) -> void:
-	var directory := DirAccess.open(path)
-	if directory == null:
-		return
-
-	var filenames: Array[String] = []
-	directory.list_dir_begin()
-	var filename := directory.get_next()
-	while not filename.is_empty():
-		if not directory.current_is_dir() and filename.to_lower().ends_with(".txt") and not filename.begins_with("_"):
-			filenames.append(filename)
-		filename = directory.get_next()
-	directory.list_dir_end()
-
-	filenames.sort_custom(func(a: String, b: String) -> bool:
-		return a.naturalnocasecmp_to(b) < 0
-	)
-	for language_filename in filenames:
-		var pack := _parse_language_file(path.path_join(language_filename))
-		var code := str(pack.get("code", "")).to_lower()
-		if not code.is_empty():
-			_merge_language_pack(code, pack, overwrite_metadata)
-
-func _merge_language_pack(code: String, incoming: Dictionary, overwrite_metadata: bool) -> void:
-	if not packs.has(code):
-		packs[code] = incoming
-		return
-
-	var merged: Dictionary = packs[code]
-	var merged_entries: Dictionary = merged.get("entries", {})
-	var incoming_entries: Dictionary = incoming.get("entries", {})
-	# Files are sorted, so later files can intentionally refine or shorten text
-	# without replacing the whole language pack. External packs are loaded last.
-	for key in incoming_entries.keys():
-		merged_entries[key] = incoming_entries[key]
-	merged["entries"] = merged_entries
-
-	if overwrite_metadata or str(merged.get("name", "")).is_empty():
-		merged["name"] = incoming.get("name", code)
-	if overwrite_metadata or str(merged.get("fallback", "")).is_empty():
-		merged["fallback"] = incoming.get("fallback", DEFAULT_LANGUAGE)
-	if overwrite_metadata:
-		merged["path"] = incoming.get("path", "")
-	packs[code] = merged
+	return str(LANGUAGE_NAMES.get(code, LANGUAGE_NAMES[DEFAULT_LANGUAGE]))
 
 func _parse_language_file(path: String) -> Dictionary:
-	var result := {
-		"code": "",
-		"name": "",
-		"fallback": DEFAULT_LANGUAGE,
-		"entries": {},
-		"path": path,
-	}
+	var result := {"entries": {}, "fallback": DEFAULT_LANGUAGE}
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		push_warning("Could not read language file: " + path)
 		return result
-
 	var content := file.get_as_text().replace("\r\n", "\n").replace("\r", "\n")
 	file.close()
 	for raw_line in content.split("\n"):
 		var line := str(raw_line)
 		var stripped := line.strip_edges()
-		# '#1 Iggy's Castle=...' is a valid translation entry. Comments only
-		# begin with '# ' (hash + space), a lone hash, or a semicolon.
 		if stripped.is_empty() or stripped == "#" or stripped.begins_with("# ") or stripped.begins_with(";"):
-			continue
-
-		if line.begins_with("@code="):
-			result["code"] = _unescape(line.substr(6)).strip_edges().to_lower()
-			continue
-		if line.begins_with("@name="):
-			result["name"] = _unescape(line.substr(6)).strip_edges()
 			continue
 		if line.begins_with("@fallback="):
 			result["fallback"] = _unescape(line.substr(10)).strip_edges().to_lower()
 			continue
-
+		if line.begins_with("@"):
+			continue
 		var separator := _find_unescaped_equals(line)
 		if separator < 0:
 			continue
 		var source := _normalize_source(_unescape(line.substr(0, separator)))
-		var translated := _unescape(line.substr(separator + 1))
-		if not source.is_empty():
-			var entries: Dictionary = result["entries"]
-			entries[source] = translated
-			result["entries"] = entries
-
-	if str(result["code"]).is_empty():
-		result["code"] = path.get_file().get_basename().to_lower()
-	if str(result["name"]).is_empty():
-		result["name"] = str(result["code"])
+		if source.is_empty():
+			continue
+		var entries: Dictionary = result["entries"]
+		entries[source] = _unescape(line.substr(separator + 1))
+		result["entries"] = entries
 	return result
 
 func _find_unescaped_equals(line: String) -> int:
@@ -259,7 +145,6 @@ func _unescape(value: String) -> String:
 			else:
 				output += character
 			continue
-
 		match character:
 			"n": output += "\n"
 			"r": output += "\r"
@@ -273,9 +158,6 @@ func _unescape(value: String) -> String:
 	return output
 
 func _normalize_source(source: String) -> String:
-	# Text in scenes often differs only by upper/lower case or by manual line
-	# wrapping. Normalize both so OPTIONS, Options and wrapped message boxes all
-	# use the same editable TXT entry.
 	var stripped := source.strip_edges().to_lower()
 	var output := ""
 	var pending_space := false
@@ -291,9 +173,7 @@ func _normalize_source(source: String) -> String:
 	return output
 
 func _source_exists(source: String) -> bool:
-	if not packs.has(DEFAULT_LANGUAGE):
-		return false
-	var entries: Dictionary = packs[DEFAULT_LANGUAGE].get("entries", {})
+	var entries: Dictionary = packs.get(DEFAULT_LANGUAGE, {}).get("entries", {})
 	return entries.has(_normalize_source(source))
 
 func _on_node_added(node: Node) -> void:
@@ -338,7 +218,6 @@ func _translate_node(node: Node, force := false) -> void:
 		_translate_property(node, "placeholder_text", force)
 	elif node is Window:
 		_translate_property(node, "title", force)
-
 	if node is Control:
 		_translate_property(node, "tooltip_text", force)
 
@@ -350,7 +229,6 @@ func _translate_property(object: Object, property_name: String, force: bool) -> 
 	var rendered_meta := META_RENDERED_PREFIX + property_name
 	var source := str(object.get_meta(source_meta, ""))
 	var last_rendered := str(object.get_meta(rendered_meta, ""))
-
 	if source.is_empty() or (current != last_rendered and not force):
 		if _source_exists(current):
 			source = current
@@ -360,11 +238,9 @@ func _translate_property(object: Object, property_name: String, force: bool) -> 
 				object.remove_meta(source_meta)
 				object.remove_meta(rendered_meta)
 			return
-
 	if source.is_empty():
 		return
-	var rendered := _translate_preserving_outer_whitespace(source)
-	rendered = _make_font_safe(object, rendered)
+	var rendered := _make_font_safe(object, _translate_preserving_outer_whitespace(source))
 	if current != rendered or force:
 		object.set(property_name, rendered)
 	object.set_meta(rendered_meta, rendered)
@@ -380,9 +256,6 @@ func _translate_preserving_outer_whitespace(source: String) -> String:
 	return source.substr(0, left) + text(core) + source.substr(right)
 
 func _make_font_safe(object: Object, value: String) -> String:
-	# Do not mix a proportional TTF into the original bitmap UI fonts. Keep
-	# accented characters when the active font supports them; otherwise use a
-	# close ASCII glyph so spacing and baselines stay pixel-perfect.
 	if not object is Control:
 		return value
 	var control := object as Control
@@ -392,7 +265,6 @@ func _make_font_safe(object: Object, value: String) -> String:
 	var font := control.get_theme_font(font_name)
 	if font == null:
 		return value
-
 	var output := ""
 	for index in range(value.length()):
 		var character := value.substr(index, 1)
