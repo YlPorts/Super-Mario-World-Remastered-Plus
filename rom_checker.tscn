@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
-[ext_resource type="Script" uid="uid://0b08t70dww8i" path="res://Scripts/UI/rom_checker.gd" id="1_tqt67"]
+[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build49.gd" id="1_build49"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -15,9 +15,9 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 content_margin_left = 8.0
-content_margin_top = 6.0
+content_margin_top = 7.0
 content_margin_right = 8.0
-content_margin_bottom = 6.0
+content_margin_bottom = 7.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxDebug"]
 bg_color = Color(0.08, 0.045, 0.015, 0.98)
@@ -31,18 +31,18 @@ corner_radius_top_right = 7
 corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
 content_margin_left = 7.0
-content_margin_top = 4.0
+content_margin_top = 6.0
 content_margin_right = 7.0
-content_margin_bottom = 4.0
+content_margin_bottom = 6.0
 
 [node name="RomChecker" type="Node"]
-script = ExtResource("1_tqt67")
+script = ExtResource("1_build49")
 
 [node name="RomFileDialog" type="FileDialog" parent="."]
 process_mode = 3
 access = 2
 file_mode = 0
-filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM;application/octet-stream,application/x-snes-rom")
+filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM")
 use_native_dialog = true
 mode_overrides_title = false
 title = "Select Super Mario World ROM"
@@ -76,7 +76,7 @@ anchor_right = 0.5
 offset_left = -190.0
 offset_top = 5.0
 offset_right = 190.0
-offset_bottom = 160.0
+offset_bottom = 164.0
 grow_horizontal = 2
 mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleBoxPanel")
@@ -84,48 +84,49 @@ theme_override_styles/panel = SubResource("StyleBoxPanel")
 [node name="Content" type="VBoxContainer" parent="RomPanel"]
 layout_mode = 2
 mouse_filter = 1
-theme_override_constants/separation = 5
+theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 15
-text = "ROM PICKER — BUILD 48"
+text = "ROM PICKER — BUILD 49"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 8
-text = "Tap SELECT ROM once. The orange panel records every event."
+text = "The picker opens on PRESS-DOWN, before you release your finger."
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="Status" type="Label" parent="RomPanel/Content"]
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
 theme_override_font_sizes/font_size = 8
-text = "Main diagnostic script is loading..."
+text = "Loading fresh BUILD 49 script..."
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="SelectRomButton" type="Button" parent="RomPanel/Content"]
-custom_minimum_size = Vector2(0, 38)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 mouse_filter = 0
 focus_mode = 0
+action_mode = 0
 theme_override_font_sizes/font_size = 14
-text = "SELECT ROM"
+text = "SELECT ROM — PRESS NOW"
 
 [node name="Hint" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 7
-text = "No gameplay touch overlay • Main-script detector"
+text = "New script path • no old script UID • no manual DisplayServer API"
 horizontal_alignment = 1
 
 [node name="DebugPanel" type="PanelContainer" parent="."]
@@ -135,7 +136,7 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -228.0
-offset_top = -104.0
+offset_top = -86.0
 offset_right = 228.0
 offset_bottom = -4.0
 grow_horizontal = 2
@@ -146,76 +147,37 @@ theme_override_styles/panel = SubResource("StyleBoxDebug")
 [node name="DebugContent" type="VBoxContainer" parent="DebugPanel"]
 layout_mode = 2
 mouse_filter = 1
-theme_override_constants/separation = 2
+theme_override_constants/separation = 4
 
 [node name="Heartbeat" type="Label" parent="DebugPanel/DebugContent"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.32, 1)
 theme_override_font_sizes/font_size = 8
-text = "MAIN NOT INITIALIZED"
+text = "BUILD 49 SCRIPT NOT LOADED"
 horizontal_alignment = 1
 
 [node name="LastEvent" type="Label" parent="DebugPanel/DebugContent"]
-custom_minimum_size = Vector2(0, 16)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 7
-text = "LAST: waiting for main script"
+text = "LAST: waiting for script"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="ApiStatus" type="Label" parent="DebugPanel/DebugContent"]
-custom_minimum_size = Vector2(0, 20)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 7
-text = "API: waiting for main script"
+text = "PICKER: waiting for script"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="Buttons" type="HBoxContainer" parent="DebugPanel/DebugContent"]
-layout_mode = 2
-mouse_filter = 1
-theme_override_constants/separation = 4
-alignment = 1
-
-[node name="TestPickerButton" type="Button" parent="DebugPanel/DebugContent/Buttons"]
-custom_minimum_size = Vector2(105, 22)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 7
-text = "TEST PICKER"
-
-[node name="CopyReportButton" type="Button" parent="DebugPanel/DebugContent/Buttons"]
-custom_minimum_size = Vector2(105, 22)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 7
-text = "COPY REPORT"
-
-[node name="ClearButton" type="Button" parent="DebugPanel/DebugContent/Buttons"]
-custom_minimum_size = Vector2(70, 22)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 7
-text = "CLEAR"
-
-[node name="Success" type="Label" parent="."]
-visible = false
-z_index = 130
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.55, 1, 0.55, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 15
-text = "ROM VERIFIED!"
-horizontal_alignment = 1
-vertical_alignment = 1
+[connection signal="canceled" from="RomFileDialog" to="." method="_on_file_dialog_canceled"]
+[connection signal="file_selected" from="RomFileDialog" to="." method="_on_file_selected"]
+[connection signal="button_down" from="RomPanel/Content/SelectRomButton" to="." method="_on_select_button_down"]
+[connection signal="pressed" from="RomPanel/Content/SelectRomButton" to="." method="_on_select_pressed"]
