@@ -67,10 +67,13 @@ jobs:
           grep -Fq 'window/stretch/mode="canvas_items"' project.godot
           grep -Fq 'window/stretch/aspect="expand"' project.godot
           grep -Fq 'BossArenaCamera="*res://Scripts/Autoload/boss_arena_camera.gd"' project.godot
-          grep -Fq 'LanguageManager="*res://Scripts/Autoload/language_manager.gd"' project.godot
+          grep -Fq 'LanguageManager="*res://Scripts/Autoload/language_manager_windows.gd"' project.godot
           ! grep -Eq '^(PortManager|TouchControls|TouchControlsRefresh)=' project.godot
           ! grep -Fq 'AndroidSettings' Instances/UI/Menus/settings_menu.tscn
           ! grep -Fq 'WINDOW_MODE_EXCLUSIVE_FULLSCREEN' Scripts/Autoload/SettingsManager.gd
+          grep -Fq 'WINDOW_MODE_FULLSCREEN' Scripts/Autoload/SettingsManager.gd
+          grep -Fq 'if window_type != 2:' Scripts/Autoload/SettingsManager.gd
+          grep -Fq 'super._make_font_safe' Scripts/Autoload/language_manager_windows.gd
           grep -Fq 'START_CAPTURE_KEYS' Scripts/UI/keyboard_settings.gd
           grep -Fq '[AUTOSCROLL62] WIDESCREEN VISUALS + 480PX GAMEPLAY SAFE ZONE ENABLED' Scripts/LevelElements/auto_scroll.gd
           ! grep -Fq 'Window.CONTENT_SCALE_ASPECT_KEEP' Scripts/LevelElements/auto_scroll.gd
@@ -78,6 +81,7 @@ jobs:
           grep -Fq 'visible = false' rom_checker.tscn
           grep -Fq '@code=en' languages/en.txt
           grep -Fq '@code=es' languages/es.txt
+          grep -Fq 'Iggy' languages/es_ui_fixes.txt
           grep -Fq 'LanguageSettings' Instances/UI/Menus/settings_menu.tscn
 
       - name: Import and validate project
@@ -130,29 +134,30 @@ jobs:
           rm -rf build/windows/languages
           cp -R languages build/windows/languages
           cat > build/windows/README.txt <<'EOF'
-          Super Mario World Remastered Plus - Windows x64 BUILD 63
+          Super Mario World Remastered Plus - Windows x64 BUILD 65
           Built with Godot 4.7.1.
 
           Run SuperMarioWorldRemasteredPlus.exe.
           It starts centered in a 1280x720 resizable window.
           On first launch, click SELECT ROM and choose your legal .sfc/.smc dump.
-          Widescreen and ultrawide fixes from BUILD 62 remain enabled.
+          Widescreen and ultrawide gameplay fixes remain enabled.
+          Fullscreen now uses the regular monitor-safe fullscreen mode.
 
           LANGUAGE SYSTEM
           English and Spanish are included. Choose one in Options > Language.
           The external languages folder is editable. Copy en.txt, change @code
           and @name, then translate the text on the right side of each = sign.
           Save as UTF-8 and restart the game to add another language.
-          The original pixel fonts remain primary; SMW Text NC is used only as
-          a fallback for missing accented Spanish characters.
+          Original pixel fonts remain in use. Unsupported accented characters
+          are converted to compatible pixel-font characters to prevent boxes.
           EOF
           cd build/windows
-          zip -9 -r "../${EXPORT_NAME}-Windows-x64-BUILD-63-Languages.zip" .
+          zip -9 -r "../${EXPORT_NAME}-Windows-x64-BUILD-65-UI-Fixes.zip" .
 
       - name: Upload Windows portable build
         uses: actions/upload-artifact@v4
         with:
-          name: smw-remastered-plus-windows-x64-build-63-languages
-          path: build/${{ env.EXPORT_NAME }}-Windows-x64-BUILD-63-Languages.zip
+          name: smw-remastered-plus-windows-x64-build-65-ui-fixes
+          path: build/${{ env.EXPORT_NAME }}-Windows-x64-BUILD-65-UI-Fixes.zip
           if-no-files-found: error
           retention-days: 14
