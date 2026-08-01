@@ -11,6 +11,7 @@ var listening_for_key := false
 var suppress_parent_until := 0
 var help_label: Label
 var reset_row: HBoxContainer
+var reset_label: Label
 
 @onready var list_container: VBoxContainer = $VBoxContainer
 
@@ -26,7 +27,7 @@ func _build_interface() -> void:
 
 	help_label = Label.new()
 	help_label.add_theme_font_override("font", HUD_FONT)
-	help_label.text = "UP/DOWN: SELECT    ENTER/SPACE: CHANGE KEY"
+	help_label.text = LanguageManager.text("UP/DOWN: SELECT    ENTER/SPACE: CHANGE KEY")
 	help_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	help_label.custom_minimum_size = Vector2(0, 20)
 	list_container.add_child(help_label)
@@ -39,7 +40,7 @@ func _build_interface() -> void:
 
 		var action_label := Label.new()
 		action_label.add_theme_font_override("font", HUD_FONT)
-		action_label.text = str(entry["label"]).to_upper()
+		action_label.text = LanguageManager.text(str(entry["label"])).to_upper()
 		action_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(action_label)
 
@@ -57,9 +58,9 @@ func _build_interface() -> void:
 	reset_row.custom_minimum_size = Vector2(0, 22)
 	reset_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list_container.add_child(reset_row)
-	var reset_label := Label.new()
+	reset_label = Label.new()
 	reset_label.add_theme_font_override("font", HUD_FONT)
-	reset_label.text = "RESTORE DEFAULT KEYS"
+	reset_label.text = LanguageManager.text("RESTORE DEFAULT KEYS")
 	reset_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	reset_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reset_row.add_child(reset_label)
@@ -96,18 +97,17 @@ func _input(event: InputEvent) -> void:
 		keycode = int(key_event.keycode)
 
 	if not listening_for_key:
-		# Do not use ui_accept here. Z belongs to ui_accept in the original game,
-		# which made it impossible to assign cleanly. Only Enter/Space starts capture.
+		# Z remains available for rebinding. Only Enter/Space begins capture.
 		if keycode in START_CAPTURE_KEYS:
 			get_viewport().set_input_as_handled()
 			suppress_parent_until = Time.get_ticks_msec() + CAPTURE_BLOCK_MS
 			if selected_index == action_rows.size():
 				SettingsManager.reset_keyboard_bindings()
-				help_label.text = "DEFAULT KEYS RESTORED"
+				help_label.text = LanguageManager.text("DEFAULT KEYS RESTORED")
 				SoundManager.play_ui_sound(SoundManager.coin)
 			else:
 				listening_for_key = true
-				help_label.text = "PRESS A NEW KEY    ESC: CANCEL"
+				help_label.text = LanguageManager.text("PRESS A NEW KEY    ESC: CANCEL")
 				SoundManager.play_ui_sound(SoundManager.select)
 			_refresh_rows()
 		return
@@ -116,7 +116,7 @@ func _input(event: InputEvent) -> void:
 	if keycode == KEY_ESCAPE:
 		listening_for_key = false
 		suppress_parent_until = Time.get_ticks_msec() + CAPTURE_BLOCK_MS
-		help_label.text = "KEY CHANGE CANCELLED"
+		help_label.text = LanguageManager.text("KEY CHANGE CANCELLED")
 		SoundManager.play_ui_sound(SoundManager.wrong)
 		_refresh_rows()
 		return
@@ -128,22 +128,27 @@ func _input(event: InputEvent) -> void:
 	SettingsManager.set_keyboard_binding(str(entry["action"]), keycode)
 	listening_for_key = false
 	suppress_parent_until = Time.get_ticks_msec() + CAPTURE_BLOCK_MS
-	help_label.text = "KEY SAVED    ENTER/SPACE: CHANGE ANOTHER"
+	help_label.text = LanguageManager.text("KEY SAVED    ENTER/SPACE: CHANGE ANOTHER")
 	SoundManager.play_ui_sound(SoundManager.correct)
 	_refresh_rows()
 
 func _refresh_rows() -> void:
+	if is_instance_valid(help_label) and not listening_for_key and Time.get_ticks_msec() >= suppress_parent_until:
+		help_label.text = LanguageManager.text("UP/DOWN: SELECT    ENTER/SPACE: CHANGE KEY")
 	for index in action_rows.size():
 		var entry = SettingsManager.REBINDABLE_KEYBOARD_ACTIONS[index]
+		action_labels[index].text = LanguageManager.text(str(entry["label"])).to_upper()
 		key_labels[index].text = SettingsManager.get_keyboard_key_name(str(entry["action"])).to_upper()
 		var highlighted := selected and selected_index == index
 		action_rows[index].modulate = Color.YELLOW if highlighted else Color.WHITE
 		if listening_for_key and highlighted:
-			key_labels[index].text = "PRESS KEY..."
+			key_labels[index].text = LanguageManager.text("PRESS KEY...")
 			key_labels[index].modulate = Color(1.0, 0.65, 0.2)
 		else:
 			key_labels[index].modulate = Color.WHITE
 
+	if is_instance_valid(reset_label):
+		reset_label.text = LanguageManager.text("RESTORE DEFAULT KEYS")
 	if is_instance_valid(reset_row):
 		reset_row.modulate = Color.YELLOW if selected and selected_index == action_rows.size() else Color.WHITE
 
