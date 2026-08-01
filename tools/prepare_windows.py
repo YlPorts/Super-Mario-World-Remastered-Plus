@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_FILE = ROOT / "project.godot"
 SETTINGS_MANAGER = ROOT / "Scripts" / "Autoload" / "SettingsManager.gd"
 ANDROID_AUTOLOADS = ("PortManager", "TouchControls", "TouchControlsRefresh")
+WINDOW_AUTOLOADS = {"BossArenaCamera": '"*res://Scripts/Autoload/boss_arena_camera.gd"'}
 
 
 def ensure_setting(text: str, section: str, key: str, value: str) -> str:
@@ -36,6 +37,12 @@ def ensure_setting(text: str, section: str, key: str, value: str) -> str:
     if insert_at == -1:
         return f"{text}\n\n{line}\n"
     return text[: insert_at + 1] + f"\n{line}\n" + text[insert_at + 1 :]
+
+
+def ensure_autoload(text: str, name: str, value: str) -> str:
+    if re.search(rf"(?m)^{re.escape(name)}=", text):
+        return re.sub(rf"(?m)^{re.escape(name)}=.*$", f"{name}={value}", text, count=1)
+    return ensure_setting(text, "autoload", name, value)
 
 
 def remove_android_autoloads(text: str) -> str:
@@ -70,6 +77,8 @@ def main() -> int:
 
     text = PROJECT_FILE.read_text(encoding="utf-8-sig")
     text = remove_android_autoloads(text)
+    for name, value in WINDOW_AUTOLOADS.items():
+        text = ensure_autoload(text, name, value)
 
     text = ensure_setting(text, "application", "config/features", 'PackedStringArray("4.7")')
     # Separate settings prevent an older fullscreen preference from being reused.
@@ -102,6 +111,10 @@ def main() -> int:
     for name in ANDROID_AUTOLOADS:
         if re.search(rf"(?m)^{re.escape(name)}=", text):
             print(f"error: Android autoload {name} is still enabled", file=sys.stderr)
+            return 1
+    for name in WINDOW_AUTOLOADS:
+        if not re.search(rf"(?m)^{re.escape(name)}=", text):
+            print(f"error: Windows autoload {name} is missing", file=sys.stderr)
             return 1
 
     print("Windows Godot 4.7.1 safe windowed widescreen project is ready.")
