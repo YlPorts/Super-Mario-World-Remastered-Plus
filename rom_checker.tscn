@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
-[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build51.gd" id="1_build51"]
+[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build52.gd" id="1_build52"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -36,14 +36,14 @@ content_margin_right = 7.0
 content_margin_bottom = 6.0
 
 [node name="RomChecker" type="Node"]
-script = ExtResource("1_build51")
+script = ExtResource("1_build52")
 
 [node name="RomFileDialog" type="FileDialog" parent="."]
 process_mode = 3
 access = 2
 file_mode = 0
-filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM")
-use_native_dialog = true
+filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM;application/octet-stream")
+use_native_dialog = false
 mode_overrides_title = false
 title = "Select Super Mario World ROM"
 ok_button_text = "Select ROM"
@@ -90,14 +90,14 @@ theme_override_constants/separation = 6
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 15
-text = "ROM PICKER — BUILD 51"
+text = "ROM PICKER — BUILD 52"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 8
-text = "Working BUILD 49 picker + ROM validation + real title-screen launch."
+text = "Direct Android Storage Access Framework selector."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -107,7 +107,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
 theme_override_font_sizes/font_size = 8
-text = "Loading minimal BUILD 51 script..."
+text = "Loading BUILD 52 Android SAF script..."
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
@@ -126,7 +126,7 @@ layout_mode = 2
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 7
-text = "No Android notifications • no packed-array constants • direct title scene"
+text = "DisplayServer.file_dialog_show • content:// URI • private ROM copy"
 horizontal_alignment = 1
 
 [node name="DebugPanel" type="PanelContainer" parent="."]
@@ -154,7 +154,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.32, 1)
 theme_override_font_sizes/font_size = 8
-text = "BUILD 51 SCRIPT NOT LOADED"
+text = "BUILD 52 SCRIPT NOT LOADED"
 horizontal_alignment = 1
 
 [node name="LastEvent" type="Label" parent="DebugPanel/DebugContent"]
@@ -172,7 +172,7 @@ custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 7
-text = "ROM: waiting for script"
+text = "SAF: waiting for script"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
