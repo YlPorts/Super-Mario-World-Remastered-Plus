@@ -1,9 +1,9 @@
 extends Node
 ## First-launch ROM importer for Android.
 ##
-## Build 45 bypasses Godot Button activation and FileDialog.popup() on touch.
-## It detects the touchscreen press directly and calls Android's native Storage
-## Access Framework through DisplayServer.file_dialog_show().
+## Build 46 bypasses Godot Button activation and FileDialog.popup() on touch.
+## It opens Android's Storage Access Framework automatically after startup and
+## also detects touchscreen presses directly as a fallback.
 
 const ROM_PATH := "user://baserom.sfc"
 const ROM_FILTERS := PackedStringArray([
@@ -43,11 +43,19 @@ func _ready() -> void:
 		proceed()
 	else:
 		show_rom_prompt("Choose your original Super Mario World .sfc or .smc ROM.")
+		call_deferred("_auto_open_after_startup")
+
+
+func _auto_open_after_startup() -> void:
+	# Give the Android Activity time to reach its resumed state. This route does
+	# not require the SELECT ROM button to receive any touch event.
+	await get_tree().create_timer(1.35, true, false, true).timeout
+	if can_check and not _dialog_open and not verify_rom():
+		_set_status("Opening Android Files automatically...", false)
+		open_rom_picker()
 
 
 func _configure_input_layers() -> void:
-	# These full-screen visual controls must never consume touches intended for
-	# the SELECT ROM button.
 	$TextureRect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	$ColorRect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	$RomPanel.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -68,8 +76,6 @@ func _keep_touch_controls_alive() -> void:
 
 
 func _configure_file_dialog() -> void:
-	# Kept only as a desktop/fallback dialog. Android normally uses
-	# DisplayServer.file_dialog_show() below.
 	_file_dialog.process_mode = Node.PROCESS_MODE_ALWAYS
 	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
@@ -89,30 +95,26 @@ func _input(event: InputEvent) -> void:
 	if not can_check:
 		return
 
-	# Android touch is handled here before any Control can swallow it. This is
-	# intentionally independent from the Button.pressed signal.
 	if event is InputEventScreenTouch and event.pressed:
 		if _select_button.get_global_rect().has_point(event.position):
 			get_viewport().set_input_as_handled()
-			_set_status("Touch detected. Opening Android files...", false)
+			_set_status("Touch detected. Opening Android Files...", false)
 			open_rom_picker()
 			return
 
-	# Mouse support helps desktop testing and Android devices that emulate touch
-	# as mouse input.
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if _select_button.get_global_rect().has_point(event.position):
 			get_viewport().set_input_as_handled()
-			_set_status("Press detected. Opening Android files...", false)
+			_set_status("Press detected. Opening Android Files...", false)
 			open_rom_picker()
 
 
 func _on_select_button_gui_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
-		_set_status("Button touch detected. Opening Android files...", false)
+		_set_status("Button touch detected. Opening Android Files...", false)
 		open_rom_picker()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_set_status("Button press detected. Opening Android files...", false)
+		_set_status("Button press detected. Opening Android Files...", false)
 		open_rom_picker()
 
 
@@ -144,7 +146,7 @@ func _show_native_dialog(generation: int) -> void:
 	if OS.has_feature("android"):
 		if not DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_FILE):
 			_dialog_open = false
-			show_rom_prompt("BUILD 45: this Android export reports no native file-dialog support.", true)
+			show_rom_prompt("BUILD 46: Android reports no native file-dialog support.", true)
 			return
 
 		var callback := Callable(self, "_on_native_file_dialog_result")
@@ -165,7 +167,6 @@ func _show_native_dialog(generation: int) -> void:
 		show_rom_prompt("Android rejected the picker request: %s (%d)." % [error_string(error), error], true)
 		return
 
-	# Desktop fallback.
 	_file_dialog.use_native_dialog = false
 	_file_dialog.popup_centered_clamped(Vector2i(760, 460), 0.9)
 
@@ -197,7 +198,6 @@ func import_rom(source_path: String) -> Dictionary:
 	if source_path.is_empty():
 		return {"success": false, "message": "No file was selected."}
 
-	# Android SAF returns a content:// URI. FileAccess accepts it directly.
 	var source := FileAccess.open(source_path, FileAccess.READ)
 	if source == null:
 		return {
