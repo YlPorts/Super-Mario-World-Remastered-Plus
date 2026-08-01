@@ -13,7 +13,7 @@ SETTINGS_MANAGER = ROOT / "Scripts" / "Autoload" / "SettingsManager.gd"
 ANDROID_AUTOLOADS = ("PortManager", "TouchControls", "TouchControlsRefresh")
 WINDOW_AUTOLOADS = {
     "BossArenaCamera": '"*res://Scripts/Autoload/boss_arena_camera.gd"',
-    "LanguageManager": '"*res://Scripts/Autoload/language_manager.gd"',
+    "LanguageManager": '"*res://Scripts/Autoload/language_manager_windows.gd"',
 }
 
 
@@ -55,12 +55,16 @@ def patch_safe_video_defaults() -> None:
 
     text = SETTINGS_MANAGER.read_text(encoding="utf-8-sig")
     text = text.replace('"resolution": Vector2(1440, 810),', '"resolution": Vector2(1280, 720),', 1)
-    text = text.replace('"window_type": 0,', '"window_type": 0,', 1)
 
     old_fullscreen = '''\t\t2:\n\t\t\tDisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_MAX, true)'''
-    safe_fullscreen = '''\t\t2:\n\t\t\tDisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_MAX, true)'''
+    safe_fullscreen = '''\t\t2:\n\t\t\t# Regular fullscreen is borderless at the monitor level without the\n\t\t\t# negative client-area offsets caused by a maximized borderless window.\n\t\t\tDisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_MAX, false)'''
     if old_fullscreen in text:
         text = text.replace(old_fullscreen, safe_fullscreen, 1)
+
+    old_center = '''\tawait get_tree().process_frame\n\tcenter_window()'''
+    safe_center = '''\tawait get_tree().process_frame\n\tif window_type != 2:\n\t\tcenter_window()'''
+    if old_center in text:
+        text = text.replace(old_center, safe_center, 1)
 
     SETTINGS_MANAGER.write_text(text, encoding="utf-8", newline="\n")
 
@@ -111,7 +115,7 @@ def main() -> int:
             print(f"error: Windows autoload {name} is missing", file=sys.stderr)
             return 1
 
-    print("Windows Godot 4.7.1 safe windowed widescreen project is ready.")
+    print("Windows Godot 4.7.1 fullscreen-safe widescreen project is ready.")
     return 0
 
 
