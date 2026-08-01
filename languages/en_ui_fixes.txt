@@ -1,0 +1,17 @@
+# Build 64 UI and message-box fixes.
+# This file is merged after en.txt. Keep source keys in English.
+@code=en
+@name=English
+@fallback=en
+
+# [MENU FIT AND MISSING KEYS]
+Options=Options
+Quit Game=Quit Game
+File Select=File Select
+f / rb to delete=f / rb to delete
+NEW FILE=NEW\nFILE
+
+# [MESSAGE BOXES]
+Hello! Sorry I'm not home but I have gone to rescue my friends who were captured by Bowser. - Yoshi=Hello! Sorry I'm not home but I have gone to rescue my friends who were captured by Bowser. - Yoshi
+Hello! Sorry I'm not home, but I have gone to rescue my friends who were captured by Bowser. - Yoshi=Hello! Sorry I'm not home, but I have gone to rescue my friends who were captured by Bowser. - Yoshi
+Welcome! This is Dinosaur Land. In this strange land we find that Princess Toadstool is missing again! Looks like Bowser is at it again!=Welcome! This is Dinosaur Land. In this strange land we find that Princess Toadstool is missing again! Looks like Bowser is at it again!
