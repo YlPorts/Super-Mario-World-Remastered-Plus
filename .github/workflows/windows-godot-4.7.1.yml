@@ -1,0 +1,101 @@
+name: Windows x64 - Godot 4.7.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - windows-godot-4.7.1
+
+concurrency:
+  group: windows-godot-4.7.1-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.1"
+  EXPORT_NAME: "SuperMarioWorldRemasteredPlus"
+
+jobs:
+  build-windows:
+    name: Build Windows x64
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.7.1
+
+    steps:
+      - name: Checkout Windows branch
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Configure Godot 4.7.1 desktop project
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends python3 zip
+          rm -rf /var/lib/apt/lists/*
+
+          mkdir -p ~/.local/share/godot/export_templates ~/.config
+
+          CONFIG_SOURCE="/root/.config/godot"
+          CONFIG_TARGET="$HOME/.config/godot"
+          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
+            rm -rf "$CONFIG_TARGET"
+            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
+          fi
+
+          TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
+            rm -rf "$TEMPLATE_TARGET"
+            mv "$TEMPLATE_SOURCE" "$TEMPLATE_TARGET"
+          fi
+
+          python3 tools/prepare_windows.py
+          grep -Fq 'config/features=PackedStringArray("4.7")' project.godot
+          grep -Fq 'window/stretch/mode="canvas_items"' project.godot
+          grep -Fq 'window/stretch/aspect="expand"' project.godot
+          ! grep -Eq '^(PortManager|TouchControls|TouchControlsRefresh)=' project.godot
+
+      - name: Import and validate project
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --import
+
+      - name: Export Windows x64 release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/windows
+          godot --headless --verbose --path . \
+            --export-release "Windows Desktop" \
+            "build/windows/${EXPORT_NAME}.exe"
+          test -s "build/windows/${EXPORT_NAME}.exe"
+          test -s "build/windows/${EXPORT_NAME}.pck"
+
+      - name: Package portable Windows build
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > build/windows/README.txt <<'EOF'
+          Super Mario World Remastered Plus - Windows x64
+          Built with Godot 4.7.1.
+
+          Run SuperMarioWorldRemasteredPlus.exe.
+          The window is resizable and expands the visible game area for
+          widescreen and ultrawide displays. No Android touch controls are loaded.
+          EOF
+          cd build/windows
+          zip -9 -r "../${EXPORT_NAME}-Windows-x64-Godot-4.7.1.zip" .
+
+      - name: Upload Windows portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: smw-remastered-plus-windows-x64-godot-4.7.1
+          path: build/${{ env.EXPORT_NAME }}-Windows-x64-Godot-4.7.1.zip
+          if-no-files-found: error
+          retention-days: 14
