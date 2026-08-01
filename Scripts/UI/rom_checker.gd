@@ -35,22 +35,24 @@ func _adopt_scene_service(child_name: String, root_name: String) -> Node:
 	var existing := get_node_or_null("/root/" + root_name)
 	var scene_service := get_node_or_null(child_name)
 
-	# A service created by an older path may already exist. Keep it and remove
-	# the duplicate scene node safely.
+	# Always prefer the node instantiated by the startup scene. A temporary
+	# service may have been created by legacy touch-control startup code, but
+	# that is the exact Script.new() path that failed on affected Android builds.
+	if scene_service != null:
+		if existing != null and existing != scene_service:
+			var old_parent := existing.get_parent()
+			if old_parent != null:
+				old_parent.remove_child(existing)
+			existing.queue_free()
+		scene_service.reparent(get_tree().root)
+		scene_service.name = root_name
+		return scene_service
+
 	if existing != null:
-		if scene_service != null and scene_service != existing:
-			scene_service.queue_free()
 		return existing
 
-	if scene_service == null:
-		push_error("Missing scene service node: " + child_name)
-		return null
-
-	# Move the already-instantiated node outside this temporary checker scene so
-	# it survives the transition to the disclaimer/menu/game scenes.
-	scene_service.reparent(get_tree().root)
-	scene_service.name = root_name
-	return scene_service
+	push_error("Missing scene service node: " + child_name)
+	return null
 
 
 func _port_manager_is_ready() -> bool:
