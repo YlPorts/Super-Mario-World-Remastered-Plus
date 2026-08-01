@@ -7,9 +7,12 @@ on:
       - windows-godot-4.7.1
       - android-touch-controls
       - android-rom-ultrawide
+  pull_request:
+    branches:
+      - main
 
 concurrency:
-  group: android-apk-471-${{ github.ref }}
+  group: android-apk-471-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
