@@ -34,14 +34,6 @@ jobs:
           ref: windows-godot-4.7.1
           lfs: true
 
-      - name: Upload source snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: smw-windows-source-snapshot
-          path: .
-          include-hidden-files: true
-          retention-days: 1
-
       - name: Configure safe Godot 4.7.1 desktop project
         shell: bash
         run: |
@@ -74,8 +66,11 @@ jobs:
           grep -Fq 'window/size/window_height_override=720' project.godot
           grep -Fq 'window/stretch/mode="canvas_items"' project.godot
           grep -Fq 'window/stretch/aspect="expand"' project.godot
+          grep -Fq 'BossArenaCamera="*res://Scripts/Autoload/boss_arena_camera.gd"' project.godot
           ! grep -Eq '^(PortManager|TouchControls|TouchControlsRefresh)=' project.godot
+          ! grep -Fq 'AndroidSettings' Instances/UI/Menus/settings_menu.tscn
           ! grep -Fq 'WINDOW_MODE_EXCLUSIVE_FULLSCREEN' Scripts/Autoload/SettingsManager.gd
+          grep -Fq 'START_CAPTURE_KEYS' Scripts/UI/keyboard_settings.gd
           grep -Fq 'visible = false' rom_checker.tscn
 
       - name: Import and validate project
@@ -91,6 +86,11 @@ jobs:
           godot --headless --path . --quit-after 6 2>&1 | tee /tmp/smw-windows-startup.log
           grep -Fq '[WIN58] ROM CHECKER READY' /tmp/smw-windows-startup.log || {
             echo 'Windows ROM selector did not reach _ready().' >&2
+            cat /tmp/smw-windows-startup.log >&2
+            exit 1
+          }
+          grep -Fq '[WIN60] BOSS CAMERA READY' /tmp/smw-windows-startup.log || {
+            echo 'Boss arena camera service did not reach _ready().' >&2
             cat /tmp/smw-windows-startup.log >&2
             exit 1
           }
@@ -116,22 +116,24 @@ jobs:
         run: |
           set -euo pipefail
           cat > build/windows/README.txt <<'EOF'
-          Super Mario World Remastered Plus - Windows x64
+          Super Mario World Remastered Plus - Windows x64 BUILD 60
           Built with Godot 4.7.1.
 
           Run SuperMarioWorldRemasteredPlus.exe.
           It starts centered in a 1280x720 resizable window.
           On first launch, click SELECT ROM and choose your legal .sfc/.smc dump.
           Widescreen and ultrawide sizes expand the visible horizontal area.
-          Exclusive fullscreen and Android touch controls are disabled.
+          Android-only options and touch controls are removed from this build.
+          Options > Controls supports keyboard reassignment, including Z.
+          Fixed-size boss arenas are centered on widescreen displays.
           EOF
           cd build/windows
-          zip -9 -r "../${EXPORT_NAME}-Windows-x64-Godot-4.7.1-Windowed-ROM-Picker.zip" .
+          zip -9 -r "../${EXPORT_NAME}-Windows-x64-BUILD-60.zip" .
 
       - name: Upload Windows portable build
         uses: actions/upload-artifact@v4
         with:
-          name: smw-remastered-plus-windows-x64-godot-4.7.1-windowed-rom-picker
-          path: build/${{ env.EXPORT_NAME }}-Windows-x64-Godot-4.7.1-Windowed-ROM-Picker.zip
+          name: smw-remastered-plus-windows-x64-build-60
+          path: build/${{ env.EXPORT_NAME }}-Windows-x64-BUILD-60.zip
           if-no-files-found: error
           retention-days: 14
