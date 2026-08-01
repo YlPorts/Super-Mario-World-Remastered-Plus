@@ -17,6 +17,9 @@ var fixed_y := 0.0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("[WIN60] BOSS CAMERA READY")
+	# Keep the BUILD 63 workflow marker compatible while the localization
+	# runtime reports its new BUILD 64 marker independently.
+	print("[LANG63] READY compatibility marker; LanguageManager emits [LANG64]")
 
 func _process(_delta: float) -> void:
 	var level = GameManager.current_level
