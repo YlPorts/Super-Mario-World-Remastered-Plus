@@ -15,7 +15,7 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	_sync_current_section()
 	if _current_section_blocks_parent_input():
-		$TitleHeader/SettingsHeader.text = current_section.title
+		$TitleHeader/SettingsHeader.text = LanguageManager.text(current_section.title)
 		return
 
 	if Input.is_action_just_pressed("ui_tab_left"):
@@ -33,7 +33,7 @@ func _physics_process(_delta: float) -> void:
 		set_starting_values()
 
 	_sync_current_section()
-	$TitleHeader/SettingsHeader.text = current_section.title
+	$TitleHeader/SettingsHeader.text = LanguageManager.text(current_section.title)
 
 	if Input.is_action_just_pressed("apply_settings"):
 		apply_settings()
@@ -63,7 +63,7 @@ func set_starting_values() -> void:
 
 func apply_settings() -> void:
 	# AndroidSettings intentionally does not exist in the Windows branch.
-	for i in [$DisplaySettings, $AudioSettings, $GameplaySettings, $AbilitySettings]:
+	for i in [$DisplaySettings, $AudioSettings, $GameplaySettings, $LanguageSettings, $AbilitySettings]:
 		var options = i.get_chosen_options()
 		for x in options.keys():
 			SettingsManager.settings_file[x] = options[x]
