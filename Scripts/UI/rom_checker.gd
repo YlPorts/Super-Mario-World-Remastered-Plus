@@ -9,7 +9,9 @@ var _port_manager: Node
 
 func _ready() -> void:
 	_port_manager = _ensure_root_service("PortManager", PORT_MANAGER_SCRIPT)
-	_ensure_root_service("TouchControls", TOUCH_CONTROLS_SCRIPT)
+	var touch_controls := _ensure_root_service("TouchControls", TOUCH_CONTROLS_SCRIPT)
+	if touch_controls != null and touch_controls.has_method("refresh_services"):
+		touch_controls.refresh_services()
 	_connect_port_manager()
 
 	if verify_rom():
