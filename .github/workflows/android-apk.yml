@@ -5,21 +5,14 @@ on:
   push:
     branches:
       - android-touch-controls
-    paths:
-      - "Android/**"
-      - "tools/prepare_android.py"
-      - "export_presets.cfg"
-      - "project.godot"
-      - ".github/workflows/android-apk.yml"
+      - android-rom-ultrawide
   pull_request:
     branches:
       - main
-    paths:
-      - "Android/**"
-      - "tools/prepare_android.py"
-      - "export_presets.cfg"
-      - "project.godot"
-      - ".github/workflows/android-apk.yml"
+
+concurrency:
+  group: android-apk-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

@@ -1,0 +1,77 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" uid="uid://den5kogms88pd" path="res://Instances/UI/selectable_option_node.tscn" id="1_select"]
+[ext_resource type="PackedScene" path="res://Instances/UI/action_option_node.tscn" id="2_action"]
+[ext_resource type="Script" uid="uid://cslnfaq5altid" path="res://Scripts/UI/settings_section.gd" id="3_section"]
+
+[node name="AndroidSettings" type="ScrollContainer"]
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.207407
+anchor_right = 0.9
+anchor_bottom = 0.948148
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+script = ExtResource("3_section")
+title = "Android"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = -4
+
+[node name="AspectMode" parent="VBoxContainer" instance=ExtResource("1_select")]
+layout_mode = 2
+node_title = "Screen Mode"
+option_value_usage = 1
+selectable_values = ["16:9 Original", "Ultrawide", "Stretch Fill"]
+settings_value = "android_aspect_mode"
+
+[node name="TouchEnabled" parent="VBoxContainer" instance=ExtResource("1_select")]
+layout_mode = 2
+node_title = "Touch Controls"
+selectable_values = [false, true]
+value_colours = Array[Color]([Color(0.972549, 0.345098, 0.345098, 1), Color(0.345098, 0.972549, 0.345098, 1)])
+settings_value = "touch_controls_enabled"
+
+[node name="TouchSize" parent="VBoxContainer" instance=ExtResource("1_select")]
+layout_mode = 2
+node_title = "Button Size"
+option_value_usage = 1
+selectable_values = ["75%", "90%", "100%", "115%", "130%"]
+settings_value = "touch_controls_size"
+
+[node name="TouchOpacity" parent="VBoxContainer" instance=ExtResource("1_select")]
+layout_mode = 2
+node_title = "Button Opacity"
+option_value_usage = 1
+selectable_values = ["20%", "35%", "50%", "65%", "80%"]
+settings_value = "touch_controls_opacity"
+
+[node name="AutoHide" parent="VBoxContainer" instance=ExtResource("1_select")]
+layout_mode = 2
+node_title = "Hide With Gamepad"
+selectable_values = [false, true]
+value_colours = Array[Color]([Color(0.972549, 0.345098, 0.345098, 1), Color(0.345098, 0.972549, 0.345098, 1)])
+settings_value = "touch_controls_auto_hide_gamepad"
+
+[node name="SafeArea" parent="VBoxContainer" instance=ExtResource("1_select")]
+layout_mode = 2
+node_title = "Notch Safe Area"
+selectable_values = [false, true]
+value_colours = Array[Color]([Color(0.972549, 0.345098, 0.345098, 1), Color(0.345098, 0.972549, 0.345098, 1)])
+settings_value = "touch_controls_safe_area"
+
+[node name="Vibration" parent="VBoxContainer" instance=ExtResource("1_select")]
+layout_mode = 2
+node_title = "Button Vibration"
+selectable_values = [false, true]
+value_colours = Array[Color]([Color(0.972549, 0.345098, 0.345098, 1), Color(0.345098, 0.972549, 0.345098, 1)])
+settings_value = "touch_vibration"
+
+[node name="SelectROM" parent="VBoxContainer" instance=ExtResource("2_action")]
+layout_mode = 2
+node_title = "Select ROM"

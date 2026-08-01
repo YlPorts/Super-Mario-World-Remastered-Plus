@@ -82,6 +82,14 @@ var settings_template := {
 	"holding_spin_jump": false,
 	"auto_item_drop": true,
 	"camera_shake": true,
+	"android_aspect_mode": 1,
+	"touch_controls_enabled": true,
+	"touch_controls_size": 2,
+	"touch_controls_opacity": 1,
+	"touch_controls_auto_hide_gamepad": true,
+	"touch_controls_safe_area": true,
+	"touch_vibration": true,
+	"rom_display_name": "",
 	}
 
 var raw_file: FileAccess = null
@@ -108,6 +116,9 @@ func apply_settings(settings) -> void:
 	apply_video_settings(settings)
 	apply_audio_settings(settings)
 	apply_sprite_settings(settings.sprite_settings)
+	var port_manager := get_node_or_null("/root/PortManager")
+	if port_manager != null:
+		port_manager.apply_settings(settings)
 
 func verify_settings() -> void:
 	for i in settings_template.keys():
@@ -116,6 +127,12 @@ func verify_settings() -> void:
 	save_settings()
 
 func apply_video_settings(settings) -> void:
+	# Android owns the physical window. Only desktop builds should resize or
+	# reposition it; PortManager handles Android content scaling separately.
+	if OS.has_feature("android"):
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if settings.vsync_enabled else DisplayServer.VSYNC_DISABLED)
+		return
+
 	var res = settings.resolution
 	if res is String:
 		res = res.replace(")", "")
