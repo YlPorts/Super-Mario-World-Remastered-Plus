@@ -62,7 +62,8 @@ func set_starting_values() -> void:
 		i.set_option_node_values()
 
 func apply_settings() -> void:
-	for i in [$DisplaySettings, $AudioSettings, $GameplaySettings, $AbilitySettings, $AndroidSettings]:
+	# AndroidSettings intentionally does not exist in the Windows branch.
+	for i in [$DisplaySettings, $AudioSettings, $GameplaySettings, $AbilitySettings]:
 		var options = i.get_chosen_options()
 		for x in options.keys():
 			SettingsManager.settings_file[x] = options[x]
