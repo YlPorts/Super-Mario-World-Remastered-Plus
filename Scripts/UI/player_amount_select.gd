@@ -1,6 +1,7 @@
 extends Control
 @onready var pointer: CenterContainer = $Pointer
 @onready var animations: AnimationPlayer = $Animations
+@onready var heading: Label = $Label
 
 @onready var panels = [$"HBoxContainer/1Player", $"HBoxContainer/2Player", $"HBoxContainer/3Player", $"HBoxContainer/4Player"]
 
@@ -10,12 +11,24 @@ var active := false
 signal selected
 signal cancelled
 
+func _ready() -> void:
+	# The old 136 px title area clipped English and pushed accented Spanish
+	# glyphs above the frame. Use a centered 300 px area with a safe top margin.
+	heading.anchor_left = 0.5
+	heading.anchor_right = 0.5
+	heading.offset_left = -150.0
+	heading.offset_right = 150.0
+	heading.offset_top = 8.0
+	heading.offset_bottom = 34.0
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
 func open() -> void:
 	show()
 	await get_tree().create_timer(0.25).timeout
 	active = true
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if not active:
 		return
 	if Input.is_action_just_pressed("ui_left"):
