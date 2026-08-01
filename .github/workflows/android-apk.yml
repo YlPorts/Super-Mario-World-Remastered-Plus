@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 env:
-  GODOT_VERSION: "4.4.1"
+  GODOT_VERSION: "4.7.1"
   EXPORT_NAME: "SuperMarioWorldRemasteredPlus"
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
     name: Build Android ARM64 APK
     runs-on: ubuntu-24.04
     container:
-      image: barichello/godot-ci:4.4.1
+      image: barichello/godot-ci:4.7.1
 
     steps:
       - name: Checkout project
@@ -71,8 +71,13 @@ jobs:
         run: |
           set -euo pipefail
           godot --headless --path . --quit-after 8 2>&1 | tee /tmp/smw-startup.log
-          grep -Fq "[BUILD54] READY" /tmp/smw-startup.log || {
-            echo "BUILD 54 startup script did not reach _ready()." >&2
+          grep -Fq "[BUILD55] READY" /tmp/smw-startup.log || {
+            echo "BUILD 55 startup script did not reach _ready()." >&2
+            cat /tmp/smw-startup.log >&2
+            exit 1
+          }
+          grep -Fq "4.7.1" /tmp/smw-startup.log || {
+            echo "The startup smoke test did not run under Godot 4.7.1." >&2
             cat /tmp/smw-startup.log >&2
             exit 1
           }
