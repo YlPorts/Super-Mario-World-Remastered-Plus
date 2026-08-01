@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare the original desktop project for a safe Godot 4.7.1 Windows export.
-
-The Windows build stays separate from Android, starts in a centered 1280x720
-window, uses a fresh settings directory, and expands the canvas for widescreen
-and ultrawide displays without stretching the artwork.
-"""
+"""Prepare the original desktop project for a safe Godot 4.7.1 Windows export."""
 
 from __future__ import annotations
 
@@ -16,7 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_FILE = ROOT / "project.godot"
 SETTINGS_MANAGER = ROOT / "Scripts" / "Autoload" / "SettingsManager.gd"
 ANDROID_AUTOLOADS = ("PortManager", "TouchControls", "TouchControlsRefresh")
-WINDOW_AUTOLOADS = {"BossArenaCamera": '"*res://Scripts/Autoload/boss_arena_camera.gd"'}
+WINDOW_AUTOLOADS = {
+    "BossArenaCamera": '"*res://Scripts/Autoload/boss_arena_camera.gd"',
+    "LanguageManager": '"*res://Scripts/Autoload/language_manager.gd"',
+}
 
 
 def ensure_setting(text: str, section: str, key: str, value: str) -> str:
@@ -59,9 +57,6 @@ def patch_safe_video_defaults() -> None:
     text = text.replace('"resolution": Vector2(1440, 810),', '"resolution": Vector2(1280, 720),', 1)
     text = text.replace('"window_type": 0,', '"window_type": 0,', 1)
 
-    # Prevent a stale or user-selected exclusive fullscreen setting from taking
-    # over the monitor during startup. Option 2 becomes a safe borderless,
-    # maximized desktop window instead of exclusive fullscreen.
     old_fullscreen = '''\t\t2:\n\t\t\tDisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_MAX, true)'''
     safe_fullscreen = '''\t\t2:\n\t\t\tDisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)\n\t\t\tDisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_MAX, true)'''
     if old_fullscreen in text:
@@ -81,7 +76,6 @@ def main() -> int:
         text = ensure_autoload(text, name, value)
 
     text = ensure_setting(text, "application", "config/features", 'PackedStringArray("4.7")')
-    # Separate settings prevent an older fullscreen preference from being reused.
     text = ensure_setting(
         text,
         "application",
