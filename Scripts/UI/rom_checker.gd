@@ -1,14 +1,13 @@
 extends Node
-## First-launch ROM importer.
+## First-launch ROM importer for Android.
 ##
-## This scene owns its FileDialog and ROM validation directly. It deliberately
-## does not depend on PortManager, autoload registration, Script.new(), or
-## DisplayServer.file_dialog_show(), because those service paths failed on some
-## Android exports.
+## Build 45 bypasses Godot Button activation and FileDialog.popup() on touch.
+## It detects the touchscreen press directly and calls Android's native Storage
+## Access Framework through DisplayServer.file_dialog_show().
 
 const ROM_PATH := "user://baserom.sfc"
 const ROM_FILTERS := PackedStringArray([
-	"*.sfc,*.smc;Super Nintendo ROM;application/octet-stream",
+	"*.sfc,*.smc;Super Nintendo ROM;application/octet-stream,application/x-snes-rom",
 ])
 const VALID_ROM_HASHES := PackedStringArray([
 	"0838e531fe22c077528febe14cb3ff7c492f1f5fa8de354192bdff7137c27f5b",
@@ -22,19 +21,38 @@ const VALID_ROM_HASHES := PackedStringArray([
 
 var can_check := true
 var _dialog_open := false
+var _request_generation := 0
 
 @onready var _file_dialog: FileDialog = $RomFileDialog
+@onready var _select_button: Button = $RomPanel/Content/SelectRomButton
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	set_process_input(true)
 	_keep_touch_controls_alive()
+	_configure_input_layers()
 	_configure_file_dialog()
+
+	if not _select_button.pressed.is_connected(open_rom_picker):
+		_select_button.pressed.connect(open_rom_picker)
+	if not _select_button.gui_input.is_connected(_on_select_button_gui_input):
+		_select_button.gui_input.connect(_on_select_button_gui_input)
 
 	if verify_rom():
 		proceed()
 	else:
 		show_rom_prompt("Choose your original Super Mario World .sfc or .smc ROM.")
+
+
+func _configure_input_layers() -> void:
+	# These full-screen visual controls must never consume touches intended for
+	# the SELECT ROM button.
+	$TextureRect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$ColorRect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$RomPanel.mouse_filter = Control.MOUSE_FILTER_PASS
+	_select_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	_select_button.focus_mode = Control.FOCUS_NONE
 
 
 func _keep_touch_controls_alive() -> void:
@@ -50,6 +68,8 @@ func _keep_touch_controls_alive() -> void:
 
 
 func _configure_file_dialog() -> void:
+	# Kept only as a desktop/fallback dialog. Android normally uses
+	# DisplayServer.file_dialog_show() below.
 	_file_dialog.process_mode = Node.PROCESS_MODE_ALWAYS
 	_file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
@@ -63,6 +83,37 @@ func _configure_file_dialog() -> void:
 		_file_dialog.file_selected.connect(_on_file_selected)
 	if not _file_dialog.canceled.is_connected(_on_file_dialog_canceled):
 		_file_dialog.canceled.connect(_on_file_dialog_canceled)
+
+
+func _input(event: InputEvent) -> void:
+	if not can_check:
+		return
+
+	# Android touch is handled here before any Control can swallow it. This is
+	# intentionally independent from the Button.pressed signal.
+	if event is InputEventScreenTouch and event.pressed:
+		if _select_button.get_global_rect().has_point(event.position):
+			get_viewport().set_input_as_handled()
+			_set_status("Touch detected. Opening Android files...", false)
+			open_rom_picker()
+			return
+
+	# Mouse support helps desktop testing and Android devices that emulate touch
+	# as mouse input.
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _select_button.get_global_rect().has_point(event.position):
+			get_viewport().set_input_as_handled()
+			_set_status("Press detected. Opening Android files...", false)
+			open_rom_picker()
+
+
+func _on_select_button_gui_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch and event.pressed:
+		_set_status("Button touch detected. Opening Android files...", false)
+		open_rom_picker()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_set_status("Button press detected. Opening Android files...", false)
+		open_rom_picker()
 
 
 func _process(_delta: float) -> void:
@@ -80,18 +131,51 @@ func open_rom_picker() -> void:
 	if not can_check or _dialog_open:
 		return
 	_dialog_open = true
-	_set_status("Opening Android file picker...", false)
-	# Deferring the popup prevents Android from rejecting it while processing the
-	# same touch event that pressed SELECT ROM.
-	call_deferred("_show_file_dialog")
+	_request_generation += 1
+	var generation := _request_generation
+	_set_status("Requesting Android Storage Access Framework...", false)
+	call_deferred("_show_native_dialog", generation)
 
 
-func _show_file_dialog() -> void:
-	if not is_instance_valid(_file_dialog):
-		_dialog_open = false
-		show_rom_prompt("BUILD 44 error: the FileDialog node is missing.", true)
+func _show_native_dialog(generation: int) -> void:
+	if generation != _request_generation or not _dialog_open:
 		return
+
+	if OS.has_feature("android"):
+		if not DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_FILE):
+			_dialog_open = false
+			show_rom_prompt("BUILD 45: this Android export reports no native file-dialog support.", true)
+			return
+
+		var callback := Callable(self, "_on_native_file_dialog_result")
+		var error := DisplayServer.file_dialog_show(
+			"Select Super Mario World ROM",
+			"",
+			"",
+			false,
+			DisplayServer.FILE_DIALOG_MODE_OPEN_FILE,
+			ROM_FILTERS,
+			callback
+		)
+		if error == OK:
+			_set_status("Android accepted the picker request. Choose the ROM in Files.", false)
+			return
+
+		_dialog_open = false
+		show_rom_prompt("Android rejected the picker request: %s (%d)." % [error_string(error), error], true)
+		return
+
+	# Desktop fallback.
+	_file_dialog.use_native_dialog = false
 	_file_dialog.popup_centered_clamped(Vector2i(760, 460), 0.9)
+
+
+func _on_native_file_dialog_result(status: bool, selected_paths: PackedStringArray, _selected_filter_index: int) -> void:
+	_dialog_open = false
+	if not status or selected_paths.is_empty():
+		show_rom_prompt("No file selected. Tap SELECT ROM to try again.")
+		return
+	_on_file_selected(selected_paths[0])
 
 
 func _on_file_dialog_canceled() -> void:
@@ -101,6 +185,7 @@ func _on_file_dialog_canceled() -> void:
 
 func _on_file_selected(path: String) -> void:
 	_dialog_open = false
+	_set_status("Reading and validating the selected ROM...", false)
 	var result := import_rom(path)
 	if bool(result.get("success", false)):
 		success()
@@ -112,13 +197,12 @@ func import_rom(source_path: String) -> Dictionary:
 	if source_path.is_empty():
 		return {"success": false, "message": "No file was selected."}
 
-	# Android's native picker can return a content:// URI. Godot FileAccess can
-	# read that URI directly, so it must not be converted to a filesystem path.
+	# Android SAF returns a content:// URI. FileAccess accepts it directly.
 	var source := FileAccess.open(source_path, FileAccess.READ)
 	if source == null:
 		return {
 			"success": false,
-			"message": "Android returned the file, but Godot could not read it. Try selecting it from Downloads or internal storage.",
+			"message": "Android returned the file, but Godot could not read it. Try Downloads or internal storage.",
 		}
 
 	var data := source.get_buffer(source.get_length())
@@ -166,7 +250,6 @@ func show_rom_prompt(message: String, is_error := false) -> void:
 	$RomPanel.show()
 	$Success.hide()
 	_set_status(message, is_error)
-	$RomPanel/Content/SelectRomButton.grab_focus()
 
 
 func proceed() -> void:
