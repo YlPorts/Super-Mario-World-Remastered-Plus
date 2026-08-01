@@ -23,6 +23,7 @@ env:
 
 jobs:
   build-android:
+    if: github.event_name != 'pull_request' || github.head_ref != 'windows-godot-4.7.1'
     name: Build Android ARM64 APK
     runs-on: ubuntu-24.04
     container:
