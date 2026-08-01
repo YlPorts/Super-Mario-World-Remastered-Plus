@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - windows-godot-4.7.1
 
 concurrency:
@@ -28,6 +29,7 @@ jobs:
       - name: Checkout Windows branch
         uses: actions/checkout@v4
         with:
+          ref: windows-godot-4.7.1
           lfs: true
 
       - name: Configure Godot 4.7.1 desktop project
