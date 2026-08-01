@@ -66,6 +66,17 @@ jobs:
           set -euo pipefail
           godot --headless --path . --import
 
+      - name: Run startup scene smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --quit-after 8 2>&1 | tee /tmp/smw-startup.log
+          grep -Fq "[BUILD51] READY" /tmp/smw-startup.log || {
+            echo "BUILD 51 startup script did not reach _ready()." >&2
+            cat /tmp/smw-startup.log >&2
+            exit 1
+          }
+
       - name: Export debug APK
         shell: bash
         run: |
