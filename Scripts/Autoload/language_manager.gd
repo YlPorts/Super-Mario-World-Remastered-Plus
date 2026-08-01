@@ -24,7 +24,6 @@ var _tracked_ids: Dictionary = {}
 var _scan_elapsed := 0.0
 var _patched_fonts: Dictionary = {}
 
-
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	external_language_dir = _get_external_language_dir()
@@ -41,14 +40,12 @@ func _ready() -> void:
 	call_deferred("_register_tree", get_tree().root)
 	print("[LANG63] READY languages=", get_available_language_codes(), " selected=", current_language)
 
-
 func _process(delta: float) -> void:
 	_scan_elapsed += delta
 	if _scan_elapsed < RESCAN_SECONDS:
 		return
 	_scan_elapsed = 0.0
 	_refresh_tracked_nodes()
-
 
 func reload_language_packs() -> void:
 	packs.clear()
@@ -65,7 +62,6 @@ func reload_language_packs() -> void:
 			"path": "",
 		}
 
-
 func set_language(code: String, save_setting := true) -> void:
 	var normalized := code.strip_edges().to_lower()
 	if not packs.has(normalized):
@@ -81,7 +77,6 @@ func set_language(code: String, save_setting := true) -> void:
 	_refresh_tracked_nodes(true)
 	language_changed.emit(current_language)
 	print("[LANG63] LANGUAGE CHANGED: ", current_language)
-
 
 func text(source_english: String) -> String:
 	var lookup := _normalize_source(source_english)
@@ -103,7 +98,6 @@ func text(source_english: String) -> String:
 	if english_entries.has(lookup):
 		return str(english_entries[lookup])
 	return source_english
-
 
 func get_available_languages() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -129,19 +123,16 @@ func get_available_languages() -> Array[Dictionary]:
 	)
 	return result
 
-
 func get_available_language_codes() -> Array[String]:
 	var result: Array[String] = []
 	for record in get_available_languages():
 		result.append(str(record["code"]))
 	return result
 
-
 func get_language_name(code: String) -> String:
 	if packs.has(code):
 		return str(packs[code].get("name", code))
 	return code
-
 
 func _get_external_language_dir() -> String:
 	if OS.has_feature("android"):
@@ -152,7 +143,6 @@ func _get_external_language_dir() -> String:
 	if executable.is_empty():
 		return ""
 	return executable.get_base_dir().path_join("languages")
-
 
 func _load_language_directory(path: String, overwrite_existing: bool) -> void:
 	var directory := DirAccess.open(path)
@@ -169,7 +159,6 @@ func _load_language_directory(path: String, overwrite_existing: bool) -> void:
 				packs[code] = pack
 		filename = directory.get_next()
 	directory.list_dir_end()
-
 
 func _parse_language_file(path: String) -> Dictionary:
 	var result := {
@@ -188,7 +177,10 @@ func _parse_language_file(path: String) -> Dictionary:
 	file.close()
 	for raw_line in content.split("\n"):
 		var line := str(raw_line)
-		if line.strip_edges().is_empty() or line.strip_edges().begins_with("#") or line.strip_edges().begins_with(";"):
+		var stripped := line.strip_edges()
+		# '#1 Iggy's Castle=...' is a valid translation entry. Comments only
+		# begin with '# ' (hash + space), a lone hash, or a semicolon.
+		if stripped.is_empty() or stripped == "#" or stripped.begins_with("# ") or stripped.begins_with(";"):
 			continue
 
 		if line.begins_with("@code="):
@@ -217,7 +209,6 @@ func _parse_language_file(path: String) -> Dictionary:
 		result["name"] = str(result["code"])
 	return result
 
-
 func _find_unescaped_equals(line: String) -> int:
 	var escaped := false
 	for index in range(line.length()):
@@ -229,7 +220,6 @@ func _find_unescaped_equals(line: String) -> int:
 		elif character == "=":
 			return index
 	return -1
-
 
 func _unescape(value: String) -> String:
 	var output := ""
@@ -255,10 +245,8 @@ func _unescape(value: String) -> String:
 		output += "\\"
 	return output
 
-
 func _normalize_source(source: String) -> String:
 	return source.strip_edges()
-
 
 func _source_exists(source: String) -> bool:
 	if not packs.has(DEFAULT_LANGUAGE):
@@ -266,14 +254,11 @@ func _source_exists(source: String) -> bool:
 	var entries: Dictionary = packs[DEFAULT_LANGUAGE].get("entries", {})
 	return entries.has(_normalize_source(source))
 
-
 func _on_node_added(node: Node) -> void:
 	call_deferred("_register_tree", node)
 
-
 func _on_node_removed(node: Node) -> void:
 	_tracked_ids.erase(node.get_instance_id())
-
 
 func _register_tree(node: Node) -> void:
 	if node == null or not is_instance_valid(node):
@@ -283,10 +268,8 @@ func _register_tree(node: Node) -> void:
 	for child in node.get_children():
 		_register_tree(child)
 
-
 func _is_text_node(node: Node) -> bool:
 	return node is Label or node is Button or node is RichTextLabel or node is LineEdit or node is Window
-
 
 func _register_text_node(node: Node) -> void:
 	var id := node.get_instance_id()
@@ -296,7 +279,6 @@ func _register_text_node(node: Node) -> void:
 	_tracked.append(weakref(node))
 	_ensure_pixel_font_fallback(node)
 	_translate_node(node, true)
-
 
 func _refresh_tracked_nodes(force := false) -> void:
 	var remaining: Array[WeakRef] = []
@@ -309,7 +291,6 @@ func _refresh_tracked_nodes(force := false) -> void:
 		_translate_node(node, force)
 	_tracked = remaining
 
-
 func _translate_node(node: Node, force := false) -> void:
 	if node is Label or node is Button or node is RichTextLabel:
 		_translate_property(node, "text", force)
@@ -320,7 +301,6 @@ func _translate_node(node: Node, force := false) -> void:
 
 	if node is Control:
 		_translate_property(node, "tooltip_text", force)
-
 
 func _translate_property(object: Object, property_name: String, force: bool) -> void:
 	var current := str(object.get(property_name))
@@ -348,7 +328,6 @@ func _translate_property(object: Object, property_name: String, force: bool) -> 
 		object.set(property_name, rendered)
 	object.set_meta(rendered_meta, rendered)
 
-
 func _translate_preserving_outer_whitespace(source: String) -> String:
 	var left := 0
 	while left < source.length() and source.substr(left, 1) in [" ", "\t", "\n", "\r"]:
@@ -359,7 +338,6 @@ func _translate_preserving_outer_whitespace(source: String) -> String:
 	var core := source.substr(left, right - left)
 	return source.substr(0, left) + text(core) + source.substr(right)
 
-
 func _ensure_pixel_font_fallback(node: Node) -> void:
 	if not node is Control:
 		return
@@ -368,14 +346,14 @@ func _ensure_pixel_font_fallback(node: Node) -> void:
 		if control.has_theme_font(theme_font_name):
 			_add_font_fallback(control.get_theme_font(theme_font_name))
 
-
 func _add_font_fallback(font: Font) -> void:
 	if font == null or font == PIXEL_FALLBACK_FONT:
 		return
 	var id := font.get_instance_id()
 	if _patched_fonts.has(id):
 		return
-	var fallbacks: Array[Font] = font.fallbacks.duplicate()
+	var fallbacks: Array[Font] = []
+	fallbacks.assign(font.fallbacks)
 	if not fallbacks.has(PIXEL_FALLBACK_FONT):
 		fallbacks.append(PIXEL_FALLBACK_FONT)
 		font.fallbacks = fallbacks
