@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://8uyqq4rf0cl1"]
+[gd_scene load_steps=18 format=3 uid="uid://8uyqq4rf0cl1"]
 
 [ext_resource type="Script" uid="uid://c0cjtqsi4ln15" path="res://Scripts/UI/settings_menu.gd" id="1_nelhb"]
 [ext_resource type="Texture2D" uid="uid://gqv4p5bghklh" path="res://Assets/Sprites/UI/SettingsBG.png" id="2_g8p0s"]
@@ -13,6 +13,7 @@
 [ext_resource type="FontFile" uid="uid://bhqyq3yxbvqkd" path="res://Assets/Sprites/UI/HUD/HUDFont.png" id="11_hsiay"]
 [ext_resource type="AudioStream" uid="uid://brm5imjbfu1ar" path="res://Assets/Audio/BGM/SMW/Options.mp3" id="12_g8p0s"]
 [ext_resource type="PackedScene" path="res://Instances/UI/keyboard_settings.tscn" id="14_keyboard"]
+[ext_resource type="PackedScene" path="res://Instances/UI/language_settings.tscn" id="15_language"]
 
 [sub_resource type="Shader" id="Shader_gqxou"]
 code = "shader_type canvas_item;
@@ -36,7 +37,7 @@ shader_parameter/offset = Vector2(0, 0)
 [node name="OptionsMenu" type="Node" node_paths=PackedStringArray("sections")]
 process_mode = 3
 script = ExtResource("1_nelhb")
-sections = [NodePath("DisplaySettings"), NodePath("AudioSettings"), NodePath("GameplaySettings"), NodePath("KeyboardSettings"), NodePath("AbilitySettings"), NodePath("SpriteSettings")]
+sections = [NodePath("DisplaySettings"), NodePath("AudioSettings"), NodePath("GameplaySettings"), NodePath("KeyboardSettings"), NodePath("LanguageSettings"), NodePath("AbilitySettings"), NodePath("SpriteSettings")]
 metadata/_edit_use_anchors_ = true
 
 [node name="BG" type="TextureRect" parent="."]
@@ -116,6 +117,9 @@ option_nodes = [NodePath("VBoxContainer/LevelLayout"), null, null, NodePath("VBo
 title = "Gameplay"
 
 [node name="KeyboardSettings" parent="." instance=ExtResource("14_keyboard")]
+metadata/_edit_use_anchors_ = true
+
+[node name="LanguageSettings" parent="." instance=ExtResource("15_language")]
 metadata/_edit_use_anchors_ = true
 
 [node name="AbilitySettings" parent="." instance=ExtResource("9_kq8w2")]
