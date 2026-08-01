@@ -1,0 +1,158 @@
+name: Preview Release BUILD 69
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - windows-godot-4.7.1
+
+concurrency:
+  group: preview-release-build-69
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.7.1"
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.7.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: windows-godot-4.7.1
+          lfs: true
+      - name: Prepare Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends python3 ca-certificates zip
+          rm -rf /var/lib/apt/lists/*
+          mkdir -p ~/.local/share/godot/export_templates ~/.config
+          if [ -d /root/.config/godot ] && [ /root/.config/godot != "$HOME/.config/godot" ]; then
+            rm -rf "$HOME/.config/godot"
+            mv /root/.config/godot "$HOME/.config/godot"
+          fi
+          SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          if [ -d "$SOURCE" ] && [ "$SOURCE" != "$TARGET" ]; then
+            rm -rf "$TARGET"
+            mv "$SOURCE" "$TARGET"
+          fi
+          python3 tools/prepare_windows.py
+          python3 tools/prepare_common_ui.py
+          godot --headless --path . --import 2>&1 | tee /tmp/windows69-import.log
+          if grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/windows69-import.log; then
+            cat /tmp/windows69-import.log >&2
+            exit 1
+          fi
+      - name: Export Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/windows/languages
+          godot --headless --path . --export-release "Windows Desktop" build/windows/SuperMarioWorldRemasteredPlus.exe
+          test -s build/windows/SuperMarioWorldRemasteredPlus.exe
+          test -s build/windows/SuperMarioWorldRemasteredPlus.pck
+          cp languages/en.txt languages/es.txt languages/en_ui_fixes.txt languages/es_ui_fixes.txt languages/en_mobile.txt languages/es_mobile.txt build/windows/languages/
+          cat > build/windows/README.txt <<'EOF'
+          Super Mario World Remastered Plus - Windows BUILD 69
+          Selector fijo: English / Español.
+          Fuente pixel compatible con Ñ y vocales acentuadas.
+          EOF
+          cd build/windows
+          zip -9 -r ../SuperMarioWorldRemasteredPlus-Windows-x64-BUILD-69.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build-69
+          path: build/SuperMarioWorldRemasteredPlus-Windows-x64-BUILD-69.zip
+
+  android:
+    name: Android arm64
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.7.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: windows-godot-4.7.1
+          lfs: true
+      - name: Prepare Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends python3 ca-certificates zip openjdk-17-jdk-headless
+          rm -rf /var/lib/apt/lists/*
+          mkdir -p ~/.local/share/godot/export_templates ~/.config ~/.android
+          if [ -d /root/.config/godot ] && [ /root/.config/godot != "$HOME/.config/godot" ]; then
+            rm -rf "$HOME/.config/godot"
+            mv /root/.config/godot "$HOME/.config/godot"
+          fi
+          SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          if [ -d "$SOURCE" ] && [ "$SOURCE" != "$TARGET" ]; then
+            rm -rf "$TARGET"
+            mv "$SOURCE" "$TARGET"
+          fi
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=YlPorts,C=PA"
+          fi
+          python3 tools/prepare_android_mobile_68.py
+          python3 tools/prepare_common_ui.py
+          godot --headless --path . --import 2>&1 | tee /tmp/android69-import.log
+          if grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/android69-import.log; then
+            cat /tmp/android69-import.log >&2
+            exit 1
+          fi
+      - name: Export Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/android/package
+          godot --headless --verbose --path . --export-debug "Android Mobile" build/android/package/SuperMarioWorldRemasteredPlus-Mobile.apk
+          test -s build/android/package/SuperMarioWorldRemasteredPlus-Mobile.apk
+          cat > build/android/package/README.txt <<'EOF'
+          Super Mario World Remastered Plus - Android arm64 BUILD 69
+          Selector fijo: English / Español.
+          Botón único AÑADIR ROM.
+          Controles táctiles estilo SNES: activar, tamaño, opacidad, mover y restablecer.
+          EOF
+          cd build/android/package
+          zip -9 ../SuperMarioWorldRemasteredPlus-Android-arm64-BUILD-69.zip SuperMarioWorldRemasteredPlus-Mobile.apk README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-build-69
+          path: build/android/SuperMarioWorldRemasteredPlus-Android-arm64-BUILD-69.zip
+
+  release:
+    name: Publish preview assets
+    needs: [windows, android]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-build-69"
+          path: dist
+          merge-multiple: true
+      - name: Publish BUILD 69 preview
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-69-preview
+          name: BUILD 69 Preview - PC + Android
+          prerelease: true
+          generate_release_notes: false
+          body: |
+            Vista previa bilingüe para pruebas.
+            - PC: selector English/Español y fuente pixel con Ñ.
+            - Android: botón AÑADIR ROM y controles SNES movibles/configurables.
+            Esta compilación todavía necesita validación visual en dispositivos reales.
+          files: |
+            dist/SuperMarioWorldRemasteredPlus-Windows-x64-BUILD-69.zip
+            dist/SuperMarioWorldRemasteredPlus-Android-arm64-BUILD-69.zip
