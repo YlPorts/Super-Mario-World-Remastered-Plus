@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
+[gd_scene load_steps=6 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
 [ext_resource type="Script" uid="uid://0b08t70dww8i" path="res://Scripts/UI/rom_checker.gd" id="1_tqt67"]
 [ext_resource type="Script" path="res://Android/touch_controls.gd" id="3_touch_controls"]
+[ext_resource type="Script" path="res://Android/rom_picker_probe.gd" id="4_rom_picker_probe"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -21,6 +22,11 @@ script = ExtResource("1_tqt67")
 
 [node name="TouchControls" type="CanvasLayer" parent="."]
 script = ExtResource("3_touch_controls")
+
+[node name="RomPickerProbe" type="CanvasLayer" parent="."]
+process_mode = 3
+layer = 2000
+script = ExtResource("4_rom_picker_probe")
 
 [node name="RomFileDialog" type="FileDialog" parent="."]
 process_mode = 3
@@ -78,14 +84,14 @@ theme_override_constants/separation = 10
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 17
-text = "SELECT SUPER MARIO WORLD ROM"
+text = "ROM PICKER DIAGNOSTIC"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 10
-text = "Use your own original .sfc or .smc dump.\nThe app validates it and stores a private copy."
+text = "Tap SELECT ROM once. The panel below will record the touch,\nthe Android API result, and whether a callback arrives."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -94,7 +100,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
 theme_override_font_sizes/font_size = 10
-text = "The Android file picker will open automatically."
+text = "Diagnostic probe is starting..."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -111,7 +117,7 @@ layout_mode = 2
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 8
-text = "BUILD 46 • Automatic Android SAF • Direct touch fallback"
+text = "BUILD 47 DIAGNOSTIC • Use COPY REPORT after the test"
 horizontal_alignment = 1
 
 [node name="Success" type="Label" parent="."]
@@ -130,5 +136,3 @@ theme_override_font_sizes/font_size = 15
 text = "ROM VERIFIED!"
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[connection signal="pressed" from="RomPanel/Content/SelectRomButton" to="." method="open_rom_picker"]
