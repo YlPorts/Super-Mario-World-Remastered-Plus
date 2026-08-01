@@ -2,6 +2,7 @@ extends SettingsSection
 
 const HUD_FONT = preload("res://Assets/Sprites/UI/HUD/HUDFont.png")
 const CAPTURE_BLOCK_MS := 250
+const START_CAPTURE_KEYS := [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
 
 var action_rows: Array[HBoxContainer] = []
 var action_labels: Array[Label] = []
@@ -79,31 +80,40 @@ func _physics_process(_delta: float) -> void:
 		selected_index = max(selected_index - 1, 0)
 		SoundManager.play_ui_sound(SoundManager.select)
 
-	if Input.is_action_just_pressed("ui_accept"):
-		if selected_index == action_rows.size():
-			SettingsManager.reset_keyboard_bindings()
-			SoundManager.play_ui_sound(SoundManager.coin)
-			suppress_parent_until = Time.get_ticks_msec() + CAPTURE_BLOCK_MS
-		else:
-			listening_for_key = true
-			help_label.text = "PRESS A NEW KEY    ESC: CANCEL"
-			SoundManager.play_ui_sound(SoundManager.select)
-
 	selected_index = clamp(selected_index, 0, row_count - 1)
 	_refresh_rows()
 	_ensure_selected_visible()
 
 func _input(event: InputEvent) -> void:
-	if not listening_for_key:
-		return
-	if not event is InputEventKey:
+	if not selected or not event is InputEventKey:
 		return
 	var key_event := event as InputEventKey
 	if not key_event.pressed or key_event.echo:
 		return
 
+	var keycode := int(key_event.physical_keycode)
+	if keycode == 0:
+		keycode = int(key_event.keycode)
+
+	if not listening_for_key:
+		# Do not use ui_accept here. Z belongs to ui_accept in the original game,
+		# which made it impossible to assign cleanly. Only Enter/Space starts capture.
+		if keycode in START_CAPTURE_KEYS:
+			get_viewport().set_input_as_handled()
+			suppress_parent_until = Time.get_ticks_msec() + CAPTURE_BLOCK_MS
+			if selected_index == action_rows.size():
+				SettingsManager.reset_keyboard_bindings()
+				help_label.text = "DEFAULT KEYS RESTORED"
+				SoundManager.play_ui_sound(SoundManager.coin)
+			else:
+				listening_for_key = true
+				help_label.text = "PRESS A NEW KEY    ESC: CANCEL"
+				SoundManager.play_ui_sound(SoundManager.select)
+			_refresh_rows()
+		return
+
 	get_viewport().set_input_as_handled()
-	if key_event.keycode == KEY_ESCAPE or key_event.physical_keycode == KEY_ESCAPE:
+	if keycode == KEY_ESCAPE:
 		listening_for_key = false
 		suppress_parent_until = Time.get_ticks_msec() + CAPTURE_BLOCK_MS
 		help_label.text = "KEY CHANGE CANCELLED"
@@ -111,9 +121,6 @@ func _input(event: InputEvent) -> void:
 		_refresh_rows()
 		return
 
-	var keycode := int(key_event.physical_keycode)
-	if keycode == 0:
-		keycode = int(key_event.keycode)
 	if keycode <= 0:
 		return
 
