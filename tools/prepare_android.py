@@ -15,6 +15,7 @@ PROJECT_FILE = Path(__file__).resolve().parents[1] / "project.godot"
 AUTOLOADS = {
     "PortManager": '"*res://Android/port_manager.gd"',
     "TouchControls": '"*res://Android/touch_controls.gd"',
+    "TouchControlsRefresh": '"*res://Android/touch_controls_refresh.gd"',
 }
 
 
