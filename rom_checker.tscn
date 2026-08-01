@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
-[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build50.gd" id="1_build50"]
+[ext_resource type="Script" path="res://Scripts/UI/rom_checker_build51.gd" id="1_build51"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
 bg_color = Color(0.055, 0.09, 0.16, 0.98)
@@ -36,13 +36,13 @@ content_margin_right = 7.0
 content_margin_bottom = 6.0
 
 [node name="RomChecker" type="Node"]
-script = ExtResource("1_build50")
+script = ExtResource("1_build51")
 
 [node name="RomFileDialog" type="FileDialog" parent="."]
 process_mode = 3
 access = 2
 file_mode = 0
-filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM;application/octet-stream,application/x-snes-rom")
+filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM")
 use_native_dialog = true
 mode_overrides_title = false
 title = "Select Super Mario World ROM"
@@ -90,14 +90,14 @@ theme_override_constants/separation = 6
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 15
-text = "ROM PICKER — BUILD 50"
+text = "ROM PICKER — BUILD 51"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_font_sizes/font_size = 8
-text = "Select your own legal Super Mario World .sfc/.smc ROM."
+text = "Working BUILD 49 picker + ROM validation + real title-screen launch."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -107,7 +107,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
 theme_override_font_sizes/font_size = 8
-text = "Loading BUILD 50 import and launch script..."
+text = "Loading minimal BUILD 51 script..."
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
@@ -126,7 +126,7 @@ layout_mode = 2
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 7
-text = "Select • validate • save privately • launch game"
+text = "No Android notifications • no packed-array constants • direct title scene"
 horizontal_alignment = 1
 
 [node name="DebugPanel" type="PanelContainer" parent="."]
@@ -154,7 +154,7 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.32, 1)
 theme_override_font_sizes/font_size = 8
-text = "BUILD 50 SCRIPT NOT LOADED"
+text = "BUILD 51 SCRIPT NOT LOADED"
 horizontal_alignment = 1
 
 [node name="LastEvent" type="Label" parent="DebugPanel/DebugContent"]
@@ -196,6 +196,5 @@ vertical_alignment = 1
 
 [connection signal="canceled" from="RomFileDialog" to="." method="_on_file_dialog_canceled"]
 [connection signal="file_selected" from="RomFileDialog" to="." method="_on_file_selected"]
-[connection signal="files_selected" from="RomFileDialog" to="." method="_on_files_selected"]
 [connection signal="button_down" from="RomPanel/Content/SelectRomButton" to="." method="_on_select_button_down"]
 [connection signal="pressed" from="RomPanel/Content/SelectRomButton" to="." method="_on_select_pressed"]
