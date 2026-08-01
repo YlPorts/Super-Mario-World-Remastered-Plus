@@ -56,6 +56,7 @@ func _ready() -> void:
 	add_child(_root)
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
+	_normalize_primary_joypad_devices()
 	get_viewport().size_changed.connect(_rebuild_layout)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	var port_manager := get_node_or_null("/root/PortManager")
@@ -71,7 +72,30 @@ func _apply_preferences() -> void:
 
 
 func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	# Android can assign a new device ID after a Bluetooth/USB reconnect.
+	# Rebind player-one/UI actions to any joypad without releasing touch input.
+	call_deferred("_normalize_primary_joypad_devices")
 	_update_visibility()
+
+
+func _normalize_primary_joypad_devices() -> void:
+	var actions_to_fix: Dictionary = {}
+	for zone_actions: Array in ZONE_ACTIONS.values():
+		for action: StringName in zone_actions:
+			actions_to_fix[action] = true
+
+	for action: StringName in actions_to_fix.keys():
+		if not InputMap.has_action(action):
+			continue
+		for event: InputEvent in InputMap.action_get_events(action):
+			if not (event is InputEventJoypadButton or event is InputEventJoypadMotion):
+				continue
+			if event.device == -1:
+				continue
+			var replacement := event.duplicate() as InputEvent
+			replacement.device = -1
+			InputMap.action_erase_event(action, event)
+			InputMap.action_add_event(action, replacement)
 
 
 func _input(event: InputEvent) -> void:
@@ -103,10 +127,9 @@ func _exit_tree() -> void:
 func _update_visibility() -> void:
 	if not is_instance_valid(_root):
 		return
-	var enabled := bool(_settings.get("touch_controls_enabled", true))
-	var auto_hide := bool(_settings.get("touch_controls_auto_hide_gamepad", true))
-	var gamepad_connected := not Input.get_connected_joypads().is_empty()
-	_root.visible = enabled and not (auto_hide and gamepad_connected)
+	# A connected/ghost Android joypad must never make the fallback controls
+	# disappear. Gamepad and touchscreen input are intentionally simultaneous.
+	_root.visible = bool(_settings.get("touch_controls_enabled", true))
 	if not _root.visible:
 		_release_all()
 
