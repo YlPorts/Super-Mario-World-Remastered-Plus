@@ -1,8 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://dvbp0nouhoin8"]
+[gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
 [ext_resource type="Script" uid="uid://0b08t70dww8i" path="res://Scripts/UI/rom_checker.gd" id="1_tqt67"]
-[ext_resource type="Script" path="res://Android/port_manager.gd" id="2_port_manager"]
 [ext_resource type="Script" path="res://Android/touch_controls.gd" id="3_touch_controls"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPanel"]
@@ -20,11 +19,18 @@ corner_radius_bottom_left = 12
 [node name="RomChecker" type="Node"]
 script = ExtResource("1_tqt67")
 
-[node name="PortManager" type="Node" parent="."]
-script = ExtResource("2_port_manager")
-
 [node name="TouchControls" type="CanvasLayer" parent="."]
 script = ExtResource("3_touch_controls")
+
+[node name="RomFileDialog" type="FileDialog" parent="."]
+process_mode = 3
+access = 2
+file_mode = 0
+filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM;application/octet-stream")
+use_native_dialog = true
+mode_overrides_title = false
+title = "Select Super Mario World ROM"
+ok_button_text = "Select ROM"
 
 [node name="TextureRect" type="TextureRect" parent="."]
 z_index = -20
@@ -96,7 +102,7 @@ text = "SELECT ROM"
 layout_mode = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 8
-text = "BUILD 43 • Tap again if you close the Android picker."
+text = "BUILD 44 • Direct Android FileDialog • No ROM service"
 horizontal_alignment = 1
 
 [node name="Success" type="Label" parent="."]
