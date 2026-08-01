@@ -12,15 +12,14 @@ extends OptionNode
 @onready var value: Label = $MarginContainer/Container/ValueContainer/Value
 
 var selected_index := 0
-
 var selected_value = null
 
-func update(delta: float) -> void:
+func update(_delta: float) -> void:
 	arrow.visible = highlighted
-	title.text = "  " + node_title + ":"
-	value.text = str(selectable_values[selected_index])
+	title.text = "  " + LanguageManager.text(node_title) + ":"
+	value.text = LanguageManager.text(str(selectable_values[selected_index]))
 	left.modulate.a = 1 if highlighted and selected_index > 0 else 0
-	if value_colours.is_empty() == false:
+	if not value_colours.is_empty():
 		if value_colours[selected_index] != null:
 			value.modulate = value_colours[selected_index]
 		else:
@@ -33,7 +32,7 @@ func update(delta: float) -> void:
 		elif Input.is_action_just_pressed("move_left_0"):
 			selected_index -= 1
 			SoundManager.play_ui_sound(SoundManager.select)
-	selected_index = clamp(selected_index,0, selectable_values.size() - 1)
+	selected_index = clamp(selected_index, 0, selectable_values.size() - 1)
 	selected_value = selectable_values[selected_index]
 	update_2()
 
@@ -43,5 +42,4 @@ func update_2() -> void:
 func get_chosen_val():
 	if option_value_usage == 0:
 		return selected_value
-	else:
-		return selected_index
+	return selected_index

@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dvbp0nouhoin8"]
 
 [ext_resource type="Texture2D" uid="uid://5pk0boo12kaf" path="res://Assets/Sprites/UI/PlayBG.png" id="1_b0ncf"]
-[ext_resource type="Script" uid="uid://0b08t70dww8i" path="res://Scripts/UI/rom_checker.gd" id="1_tqt67"]
+[ext_resource type="Script" path="res://Scripts/UI/rom_checker_windows_58.gd" id="1_win58"]
 
 [sub_resource type="Shader" id="Shader_tqt67"]
 code = "shader_type canvas_item;
@@ -21,7 +21,17 @@ shader_parameter/scale = 1.0
 shader_parameter/offset = Vector2(0, 0)
 
 [node name="RomChecker" type="Node"]
-script = ExtResource("1_tqt67")
+script = ExtResource("1_win58")
+
+[node name="FileDialog" type="FileDialog" parent="."]
+process_mode = 3
+access = 2
+file_mode = 0
+filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM")
+use_native_dialog = true
+mode_overrides_title = false
+title = "Select Super Mario World ROM"
+ok_button_text = "Select ROM"
 
 [node name="TextureRect" type="TextureRect" parent="."]
 material = SubResource("ShaderMaterial_6m6un")
@@ -30,6 +40,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("1_b0ncf")
 stretch_mode = 1
 
@@ -39,15 +50,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 12
 text = "
 Select your legally dumped Super Mario World ROM.
 
-Press A / Enter or tap SELECT ROM.
+Supported files: .sfc or .smc
 
-Supported files: .sfc or .smc"
+Press Enter or click SELECT ROM."
 horizontal_alignment = 1
 
 [node name="Error" type="Label" parent="Text"]
@@ -58,13 +70,12 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.485327, 0.461038, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 10
-text = "Error Verifying ROM!
-
-Please ensure that it is the correct name, and a valid SMW rom! (Not All-Stars + SMW or SMA2)!"
+theme_override_font_sizes/font_size = 8
+text = "Error verifying ROM"
 horizontal_alignment = 1
 vertical_alignment = 2
 autowrap_mode = 2
@@ -74,12 +85,13 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_bottom = -110.0
+offset_bottom = -105.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 10
 text = "No ROM selected"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -90,12 +102,14 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -70.0
-offset_top = 36.0
-offset_right = 70.0
-offset_bottom = 64.0
+offset_left = -82.0
+offset_top = 33.0
+offset_right = 82.0
+offset_bottom = 65.0
 grow_horizontal = 2
 grow_vertical = 2
+focus_mode = 1
+theme_override_font_sizes/font_size = 11
 text = "SELECT ROM"
 
 [node name="Success" type="Label" parent="."]
@@ -107,21 +121,26 @@ offset_top = -2.0
 offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.57178, 1, 0.540483, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 12
-text = "ROM verified! 
-Thank you!"
+text = "ROM verified!
+Starting the game..."
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ColorRect" type="ColorRect" parent="."]
+visible = false
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
+[connection signal="canceled" from="FileDialog" to="." method="_on_picker_canceled"]
+[connection signal="file_selected" from="FileDialog" to="." method="_on_file_selected"]
 [connection signal="pressed" from="SelectRomButton" to="." method="open_rom_picker"]

@@ -23,12 +23,29 @@ var all_players_selected := false
 
 var locked := false
 
+@onready var heading: Label = $Label
 @onready var confirmation: Label = $Confirmation
 
 func _ready() -> void:
+	# Both labels used narrow fixed rectangles. Give them a common centered safe
+	# area so English and compact community translations stay inside the frame.
+	heading.anchor_left = 0.5
+	heading.anchor_right = 0.5
+	heading.offset_left = -150.0
+	heading.offset_right = 150.0
+	heading.offset_top = 8.0
+	heading.offset_bottom = 36.0
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	confirmation.anchor_left = 0.5
+	confirmation.anchor_right = 0.5
+	confirmation.offset_left = -150.0
+	confirmation.offset_right = 150.0
+	confirmation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	get_characters()
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	if is_open == false:
 		return
 	handle_cursors()

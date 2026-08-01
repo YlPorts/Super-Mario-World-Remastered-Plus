@@ -11,6 +11,8 @@ var selected_save: Node = null
 @onready var arrow: CenterContainer = $Arrow
 @onready var level_select: NinePatchRect = $LevelSelect
 @onready var sub_arrow: CenterContainer = $SubArrow
+@onready var heading: Label = $Label
+@onready var delete_help: Label = $Label2
 
 var can_enter := true
 
@@ -22,7 +24,22 @@ signal save_selected
 signal custom_levels_selected
 signal campaign_selected
 
-func _process(delta: float) -> void:
+func _ready() -> void:
+	# Keep the file-select heading away from the top frame and leave enough room
+	# for translations. The delete hint also gets a wider right-aligned area.
+	heading.anchor_left = 0.5
+	heading.anchor_right = 0.5
+	heading.offset_left = -140.0
+	heading.offset_right = 140.0
+	heading.offset_top = 8.0
+	heading.offset_bottom = 34.0
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	delete_help.offset_left = -210.0
+	delete_help.offset_right = -14.0
+	delete_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+func _process(_delta: float) -> void:
 	arrow.visible = active
 	if active:
 		if can_enter:

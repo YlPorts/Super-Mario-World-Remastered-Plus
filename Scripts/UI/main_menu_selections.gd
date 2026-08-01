@@ -22,6 +22,9 @@ var selected_index := 0
 var option_nodes := []
 
 func _ready() -> void:
+	# Keep the authored 132 px menu column. BUILD 64 doubled its width, which
+	# moved the left-aligned labels far away from the logo in fullscreen. Longer
+	# translations are kept compact in the language packs instead.
 	for i in options.size():
 		if options[i] != "":
 			add_option_node(options[i], option_colours[i])
@@ -33,12 +36,14 @@ func _ready() -> void:
 
 func add_option_node(option := "", color := Color.WHITE) -> void:
 	var option_node = $VBoxContainer/Selection1.duplicate()
+	# Keep the English source here. LanguageManager translates it after the node
+	# enters the tree and can always restore it when switching languages.
 	option_node.get_node("BaseLabel").text = option
 	option_node.get_node("BaseLabel").modulate = color
 	option_nodes.append(option_node)
 	$VBoxContainer.add_child(option_node)
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	handle_selections()
 
 func handle_selections() -> void:

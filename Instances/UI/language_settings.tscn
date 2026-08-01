@@ -1,0 +1,68 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/UI/language_settings.gd" id="1_language"]
+[ext_resource type="FontFile" uid="uid://bhqyq3yxbvqkd" path="res://Assets/Sprites/UI/HUD/HUDFont.png" id="2_hud"]
+
+[node name="LanguageSettings" type="ScrollContainer"]
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.207407
+anchor_right = 0.883333
+anchor_bottom = 0.948148
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
+script = ExtResource("1_language")
+title = "Language"
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Heading" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_hud")
+theme_override_font_sizes/font_size = 12
+text = "Available Languages"
+horizontal_alignment = 1
+
+[node name="LanguageRow" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Left" type="Label" parent="VBoxContainer/LanguageRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_fonts/font = ExtResource("2_hud")
+theme_override_font_sizes/font_size = 14
+text = "<"
+
+[node name="Value" type="Label" parent="VBoxContainer/LanguageRow"]
+custom_minimum_size = Vector2(220, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_fonts/font = ExtResource("2_hud")
+theme_override_font_sizes/font_size = 14
+text = "English"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Right" type="Label" parent="VBoxContainer/LanguageRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_fonts/font = ExtResource("2_hud")
+theme_override_font_sizes/font_size = 14
+text = ">"
+
+[node name="Help" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_hud")
+theme_override_font_sizes/font_size = 8
+text = "LEFT/RIGHT: CHANGE LANGUAGE    START/ENTER: APPLY"
+horizontal_alignment = 1
+autowrap_mode = 2

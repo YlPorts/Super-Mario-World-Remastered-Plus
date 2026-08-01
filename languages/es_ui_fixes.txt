@@ -1,0 +1,93 @@
+# Ajustes de interfaz, pantalla completa y cuadros de texto para BUILD 65.
+# Este archivo se combina despues de es.txt y puede acortar textos largos.
+@code=es
+@name=Español
+@fallback=en
+
+# [MENUS CORTOS Y CLAVES QUE FALTABAN]
+Options=Opciones
+Quit Game=Salir
+Quit Level=Salir
+Player Setup=Jugadores
+Save game=Guardar
+How Many Players?=Jugadores
+Select your Character=Elige personaje
+press Start to confirm=Start: confirmar
+Custom Levels=Niveles extra
+File Select=Elegir partida
+File A=A
+File B=B
+File C=C
+NEW FILE=NUEVO
+NEW=NUEVO
+delete save=Borrar
+f / rb to delete=F / RB: BORRAR
+Available Languages=Idiomas
+LEFT/RIGHT: CHANGE LANGUAGE=IZQ./DER.: IDIOMA
+START/ENTER: APPLY=START/ENTER: APLICAR
+start / enter to apply=START / ENTER: APLICAR
+
+# [OPCIONES COMPACTAS, SIN GLIFOS ROTOS]
+Display=Pantalla
+Gameplay=Jugabilidad
+Controls=Controles
+Language=Idioma
+Moveset=Movimientos
+Sprites=Graficos
+Window Resolution=Resolucion
+Window Type=Modo de ventana
+Fullscreen=Pantalla completa
+VSync=Sincronizacion
+Drop Shadows=Sombras
+Level Layouts=Diseno de nivel
+Disable auto scroll=Sin avance automatico
+Speedrun Timer=Cronometro speedrun
+Speedrun Timer Type=Tipo de cronometro
+Camera Shake=Movimiento de camara
+Autumn (Fall) Style=Estilo otonal
+Unique Character Physics=Fisicas por personaje
+Player Damage Style=Estilo de dano
+Yoshi Spawn Pause=Pausa de Yoshi
+Faster Map Unlock Speed=Mapa mas rapido
+Edible Dolphins=Delfines comestibles
+Spin Jump While Holding=Salto giro al cargar
+Auto Reserve Item Drop=Soltar reserva auto
+Show Level Start Text=Mostrar inicio
+Wall Jump=Salto en pared
+Ground Pound=Golpe al suelo
+Air Twirl=Giro aereo
+Yoshi Flutter Jump=Salto flotante Yoshi
+Jump Buffer=Margen de salto
+Coyote Time=Tiempo coyote
+Fast Swimming=Nado rapido
+Faster Climbing=Escalada rapida
+True=Activado
+False=Desactivado
+Per-Save=Por partida
+Per-Level=Por nivel
+Overhaul=Renovado
+Classic=Clasico
+Modern=Moderno
+Fixed=Corregido
+Colour-Blind=Daltonico
+
+# [TITULOS DE CASTILLOS: AMBOS ORDENES]
+#1 Iggy's Castle=Castillo 1 de Iggy
+#2 Morton's Castle=Castillo 2 de Morton
+#3 Lemmy's Castle=Castillo 3 de Lemmy
+#4 Ludwig's Castle=Castillo 4 de Ludwig
+#5 Roy's Castle=Castillo 5 de Roy
+#6 Wendy's Castle=Castillo 6 de Wendy
+#7 Larry's Castle=Castillo 7 de Larry
+Iggy's Castle #1=Castillo 1 de Iggy
+Morton's Castle #2=Castillo 2 de Morton
+Lemmy's Castle #3=Castillo 3 de Lemmy
+Ludwig's Castle #4=Castillo 4 de Ludwig
+Roy's Castle #5=Castillo 5 de Roy
+Wendy's Castle #6=Castillo 6 de Wendy
+Larry's Castle #7=Castillo 7 de Larry
+
+# [CUADROS DE TEXTO]
+Hello! Sorry I'm not home but I have gone to rescue my friends who were captured by Bowser. - Yoshi=Hola! No estoy en casa. Fui a rescatar a mis amigos, capturados por Bowser. - Yoshi
+Hello! Sorry I'm not home, but I have gone to rescue my friends who were captured by Bowser. - Yoshi=Hola! No estoy en casa. Fui a rescatar a mis amigos, capturados por Bowser. - Yoshi
+Welcome! This is Dinosaur Land. In this strange land we find that Princess Toadstool is missing again! Looks like Bowser is at it again!=Bienvenido a Dinosaur Land! La princesa Toadstool desaparecio otra vez. Parece que Bowser volvio a hacerlo.

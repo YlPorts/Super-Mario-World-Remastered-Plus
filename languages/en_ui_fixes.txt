@@ -1,0 +1,42 @@
+# Build 65 UI, fullscreen and message-box fixes.
+# This file is merged after en.txt. Keep source keys in English.
+@code=en
+@name=English
+@fallback=en
+
+# [MENU FIT AND MISSING KEYS]
+Options=Options
+Quit Game=Quit Game
+File Select=File Select
+f / rb to delete=F / RB: DELETE
+NEW FILE=NEW\nFILE
+start / enter to apply=START / ENTER: APPLY
+
+# [COMPACT OPTIONS]
+Level Layouts=Level Layout
+Disable auto scroll=Disable Auto Scroll
+Speedrun Timer=Speedrun Timer
+Speedrun Timer Type=Timer Type
+Camera Shake=Camera Shake
+Autumn (Fall) Style=Autumn Style
+Unique Character Physics=Character Physics
+Player Damage Style=Damage Style
+Yoshi Spawn Pause=Yoshi Pause
+Faster Map Unlock Speed=Fast Map Unlock
+Spin Jump While Holding=Held Spin Jump
+Auto Reserve Item Drop=Auto Item Drop
+Show Level Start Text=Show Start Text
+
+# [CASTLE TITLE VARIANTS]
+Iggy's Castle #1=Iggy's Castle #1
+Morton's Castle #2=Morton's Castle #2
+Lemmy's Castle #3=Lemmy's Castle #3
+Ludwig's Castle #4=Ludwig's Castle #4
+Roy's Castle #5=Roy's Castle #5
+Wendy's Castle #6=Wendy's Castle #6
+Larry's Castle #7=Larry's Castle #7
+
+# [MESSAGE BOXES]
+Hello! Sorry I'm not home but I have gone to rescue my friends who were captured by Bowser. - Yoshi=Hello! Sorry I'm not home but I have gone to rescue my friends who were captured by Bowser. - Yoshi
+Hello! Sorry I'm not home, but I have gone to rescue my friends who were captured by Bowser. - Yoshi=Hello! Sorry I'm not home, but I have gone to rescue my friends who were captured by Bowser. - Yoshi
+Welcome! This is Dinosaur Land. In this strange land we find that Princess Toadstool is missing again! Looks like Bowser is at it again!=Welcome! This is Dinosaur Land. In this strange land we find that Princess Toadstool is missing again! Looks like Bowser is at it again!
