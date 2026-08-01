@@ -116,6 +116,7 @@ var settings_template := {
 	"touch_controls_safe_area": true,
 	"touch_vibration": true,
 	"rom_display_name": "",
+	"language": "en",
 	"keyboard_bindings": DEFAULT_KEYBOARD_BINDINGS.duplicate()
 }
 
@@ -155,6 +156,9 @@ func apply_settings(settings) -> void:
 	apply_audio_settings(settings_file)
 	apply_sprite_settings(settings_file.sprite_settings)
 	apply_keyboard_settings(settings_file.keyboard_bindings)
+	var language_manager := get_node_or_null("/root/LanguageManager")
+	if language_manager != null:
+		language_manager.set_language(str(settings_file.get("language", "en")), false)
 	var port_manager := get_node_or_null("/root/PortManager")
 	if port_manager != null:
 		port_manager.apply_settings(settings_file)
