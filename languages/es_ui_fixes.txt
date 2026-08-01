@@ -1,0 +1,32 @@
+# Ajustes de interfaz y cuadros de texto para BUILD 64.
+# Este archivo se combina despues de es.txt y puede acortar textos largos.
+@code=es
+@name=Español
+@fallback=en
+
+# [MENUS CORTOS Y CLAVES QUE FALTABAN]
+Options=Opciones
+Quit Game=Salir
+Quit Level=Salir
+Player Setup=Jugadores
+Save game=Guardar
+How Many Players?=Jugadores
+Select your Character=Elige personaje
+press Start to confirm=Start: confirmar
+Custom Levels=Niveles extra
+File Select=Elegir partida
+File A=A
+File B=B
+File C=C
+NEW FILE=NUEVO
+NEW=NUEVO
+delete save=Borrar
+f / rb to delete=F / RB: BORRAR
+Available Languages=Idiomas
+LEFT/RIGHT: CHANGE LANGUAGE=IZQ./DER.: IDIOMA
+START/ENTER: APPLY=START/ENTER: APLICAR
+
+# [CUADROS DE TEXTO]
+Hello! Sorry I'm not home but I have gone to rescue my friends who were captured by Bowser. - Yoshi=¡Hola! No estoy en casa. Fui a rescatar a mis amigos, capturados por Bowser. - Yoshi
+Hello! Sorry I'm not home, but I have gone to rescue my friends who were captured by Bowser. - Yoshi=¡Hola! No estoy en casa. Fui a rescatar a mis amigos, capturados por Bowser. - Yoshi
+Welcome! This is Dinosaur Land. In this strange land we find that Princess Toadstool is missing again! Looks like Bowser is at it again!=¡Bienvenido a Dinosaur Land! La princesa Toadstool ha desaparecido otra vez. Parece que Bowser volvió a hacerlo.
