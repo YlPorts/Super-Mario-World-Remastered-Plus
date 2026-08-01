@@ -26,7 +26,7 @@ script = ExtResource("3_touch_controls")
 process_mode = 3
 access = 2
 file_mode = 0
-filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM;application/octet-stream")
+filters = PackedStringArray("*.sfc,*.smc;Super Nintendo ROM;application/octet-stream,application/x-snes-rom")
 use_native_dialog = true
 mode_overrides_title = false
 title = "Select Super Mario World ROM"
@@ -39,6 +39,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("1_b0ncf")
 stretch_mode = 1
 
@@ -50,7 +51,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.01, 0.02, 0.045, 1)
-mouse_filter = 0
+mouse_filter = 2
 
 [node name="RomPanel" type="PanelContainer" parent="."]
 z_index = 110
@@ -65,20 +66,24 @@ offset_right = 190.0
 offset_bottom = 103.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 theme_override_styles/panel = SubResource("StyleBoxPanel")
 
 [node name="Content" type="VBoxContainer" parent="RomPanel"]
 layout_mode = 2
+mouse_filter = 1
 theme_override_constants/separation = 10
 
 [node name="Title" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_font_sizes/font_size = 17
 text = "SELECT SUPER MARIO WORLD ROM"
 horizontal_alignment = 1
 
 [node name="Instructions" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_font_sizes/font_size = 10
 text = "Use your own original .sfc or .smc dump.\nThe app validates it and stores a private copy."
 horizontal_alignment = 1
@@ -86,6 +91,7 @@ autowrap_mode = 2
 
 [node name="Status" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 0.86, 0.35, 1)
 theme_override_font_sizes/font_size = 10
 text = "Choose your ROM to continue."
@@ -95,14 +101,17 @@ autowrap_mode = 2
 [node name="SelectRomButton" type="Button" parent="RomPanel/Content"]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
+mouse_filter = 0
+focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "SELECT ROM"
 
 [node name="Hint" type="Label" parent="RomPanel/Content"]
 layout_mode = 2
+mouse_filter = 2
 modulate = Color(1, 1, 1, 0.72)
 theme_override_font_sizes/font_size = 8
-text = "BUILD 44 • Direct Android FileDialog • No ROM service"
+text = "BUILD 45 • Direct touch detection • Android SAF"
 horizontal_alignment = 1
 
 [node name="Success" type="Label" parent="."]
@@ -113,6 +122,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.55, 1, 0.55, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
