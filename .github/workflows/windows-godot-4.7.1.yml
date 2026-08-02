@@ -248,6 +248,19 @@ jobs:
             exit 1
           fi
 
+      - name: Run Android startup smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --quit-after 8 2>&1 | tee /tmp/smw-android-startup.log
+          grep -Fq '[ANDROID67] MINIMAL ROM PICKER READY' /tmp/smw-android-startup.log
+          grep -Fq '[MOBILE68] SNES TOUCH CONTROLS READY' /tmp/smw-android-startup.log
+          grep -Fq '[FONT67] LATIN PIXEL FALLBACK READY' /tmp/smw-android-startup.log
+          if grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/smw-android-startup.log; then
+            cat /tmp/smw-android-startup.log >&2
+            exit 1
+          fi
+
       - name: Export Android ARM64 APK
         shell: bash
         run: |
