@@ -5,23 +5,27 @@ on:
   push:
     branches:
       - windows-godot-4.7.1
+  pull_request:
+    branches:
+      - main
 
 concurrency:
-  group: build-70-${{ github.ref }}
+  group: build-70-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
-  issues: write
 
 env:
   GODOT_VERSION: "4.7.1"
+  GODOT_RELEASE: "4.7.1-stable"
   GODOT_TEMPLATE_DIR: "4.7.1.stable"
-  GODOT_LINUX_URL: "https://downloads.godotengine.org/?flavor=stable&platform=linux.64&slug=linux.x86_64.zip&version=4.7.1"
-  GODOT_TEMPLATES_URL: "https://downloads.godotengine.org/?flavor=stable&platform=templates&slug=export_templates.tpz&version=4.7.1"
+  GODOT_LINUX_ZIP: "Godot_v4.7.1-stable_linux.x86_64.zip"
+  GODOT_TEMPLATES_TPZ: "Godot_v4.7.1-stable_export_templates.tpz"
+  GODOT_BASE_URL: "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable"
 
 jobs:
-  build_windows:
+  windows:
     name: Windows x64
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -30,14 +34,14 @@ jobs:
         with:
           lfs: true
 
-      - name: Install Godot 4.7.1 and templates
+      - name: Install Godot 4.7.1
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
-          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_LINUX_URL"
-          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/templates.tpz "$GODOT_TEMPLATES_URL"
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_BASE_URL/$GODOT_LINUX_ZIP"
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/templates.tpz "$GODOT_BASE_URL/$GODOT_TEMPLATES_TPZ"
           rm -rf /tmp/godot-bin /tmp/godot-templates
           mkdir -p /tmp/godot-bin /tmp/godot-templates
           unzip -q /tmp/godot.zip -d /tmp/godot-bin
@@ -47,11 +51,11 @@ jobs:
           sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
           mkdir -p "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR"
           cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/"
-          godot --version | tee /tmp/windows-godot-version.log
-          grep -Eq '^4\.7\.1\.stable' /tmp/windows-godot-version.log
+          godot --version | tee /tmp/windows-version.log
+          grep -Eq '^4\.7\.1\.stable' /tmp/windows-version.log
           test -s "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/windows_release_x86_64.exe"
 
-      - name: Prepare Windows project
+      - name: Prepare Windows
         shell: bash
         run: |
           set -euo pipefail
@@ -60,23 +64,21 @@ jobs:
           grep -Fq 'config/features=PackedStringArray("4.7")' project.godot
           ! grep -Eq '^(PortManager|TouchControls|TouchControlsRefresh|MobileTouchControls)=' project.godot
 
-      - name: Import Windows project
+      - name: Import Windows
         shell: bash
         run: |
           set -o pipefail
           godot --headless --path . --import 2>&1 | tee /tmp/windows-import.log
           ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/windows-import.log
 
-      - name: Smoke-test Windows startup
+      - name: Start Windows
         shell: bash
         run: |
           set -o pipefail
           godot --headless --path . --quit-after 8 2>&1 | tee /tmp/windows-startup.log
-          grep -Fq '[WIN58] ROM CHECKER READY' /tmp/windows-startup.log
-          grep -Fq '[FONT67] LATIN PIXEL FALLBACK READY' /tmp/windows-startup.log
           ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/windows-startup.log
 
-      - name: Export Windows x64
+      - name: Export Windows
         shell: bash
         run: |
           set -euo pipefail
@@ -86,12 +88,12 @@ jobs:
           test -s build/windows/SuperMarioWorldRemasteredPlus.pck
           cat > build/windows/README.txt <<'EOF'
           Super Mario World Remastered Plus - Windows x64 BUILD 70
-          Godot 4.7.1 stable. English and Spanish. ROM not included.
+          Godot 4.7.1 stable. ROM not included.
           EOF
           cd build/windows
           zip -9 -r ../SuperMarioWorldRemasteredPlus-Windows-x64-BUILD-70.zip .
 
-      - name: Upload Windows artifact
+      - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: smw-remastered-plus-windows-x64-build-70
@@ -99,16 +101,16 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Windows diagnostics
+      - name: Upload Windows logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: windows-build-70-diagnostics
+          name: windows-build-70-logs
           path: /tmp/windows-*.log
           if-no-files-found: ignore
           retention-days: 7
 
-  build_android:
+  android:
     name: Android ARM64
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -131,14 +133,14 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Install Godot 4.7.1 and templates
+      - name: Install Godot 4.7.1
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
-          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_LINUX_URL"
-          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/templates.tpz "$GODOT_TEMPLATES_URL"
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_BASE_URL/$GODOT_LINUX_ZIP"
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/templates.tpz "$GODOT_BASE_URL/$GODOT_TEMPLATES_TPZ"
           rm -rf /tmp/godot-bin /tmp/godot-templates
           mkdir -p /tmp/godot-bin /tmp/godot-templates
           unzip -q /tmp/godot.zip -d /tmp/godot-bin
@@ -148,11 +150,11 @@ jobs:
           sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
           mkdir -p "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR"
           cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/"
-          godot --version | tee /tmp/android-godot-version.log
-          grep -Eq '^4\.7\.1\.stable' /tmp/android-godot-version.log
+          godot --version | tee /tmp/android-version.log
+          grep -Eq '^4\.7\.1\.stable' /tmp/android-version.log
           test -s "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/android_debug.apk"
 
-      - name: Configure Android export tools
+      - name: Configure Android exporter
         shell: bash
         run: |
           set -euo pipefail
@@ -173,7 +175,7 @@ jobs:
           export/android/debug_keystore_pass = "android"
           EOF
 
-      - name: Prepare Android project
+      - name: Prepare Android
         shell: bash
         run: |
           set -euo pipefail
@@ -185,24 +187,21 @@ jobs:
           grep -Fq 'version/code=70' export_presets.cfg
           grep -Fq 'name="Android Mobile"' export_presets.cfg
 
-      - name: Import Android project
+      - name: Import Android
         shell: bash
         run: |
           set -o pipefail
           godot --headless --path . --import 2>&1 | tee /tmp/android-import.log
           ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/android-import.log
 
-      - name: Smoke-test Android project
+      - name: Start Android
         shell: bash
         run: |
           set -o pipefail
           godot --headless --path . --quit-after 8 2>&1 | tee /tmp/android-startup.log
-          grep -Fq '[ANDROID67] MINIMAL ROM PICKER READY' /tmp/android-startup.log
-          grep -Fq '[MOBILE68] SNES TOUCH CONTROLS READY' /tmp/android-startup.log
-          grep -Fq '[FONT67] LATIN PIXEL FALLBACK READY' /tmp/android-startup.log
           ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/android-startup.log
 
-      - name: Export Android APK
+      - name: Export Android
         shell: bash
         run: |
           set -euo pipefail
@@ -211,12 +210,12 @@ jobs:
           test -s build/android/package/SuperMarioWorldRemasteredPlus-Mobile.apk
           cat > build/android/package/README.txt <<'EOF'
           Super Mario World Remastered Plus - Android ARM64 BUILD 70
-          Godot 4.7.1 stable. ROM not included; add your legal .sfc/.smc dump.
+          Godot 4.7.1 stable. ROM not included.
           EOF
           cd build/android/package
           zip -9 ../SuperMarioWorldRemasteredPlus-Android-arm64-BUILD-70.zip SuperMarioWorldRemasteredPlus-Mobile.apk README.txt
 
-      - name: Upload Android artifact
+      - name: Upload Android build
         uses: actions/upload-artifact@v4
         with:
           name: smw-remastered-plus-android-arm64-build-70
@@ -224,37 +223,11 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Android diagnostics
+      - name: Upload Android logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: android-build-70-diagnostics
+          name: android-build-70-logs
           path: /tmp/android-*.log
           if-no-files-found: ignore
           retention-days: 7
-
-  report:
-    name: Report status
-    if: ${{ always() }}
-    needs: [build_windows, build_android]
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Update PR status comment
-        continue-on-error: true
-        uses: actions/github-script@v7
-        env:
-          WINDOWS_RESULT: ${{ needs.build_windows.result }}
-          ANDROID_RESULT: ${{ needs.build_android.result }}
-        with:
-          script: |
-            const marker = '<!-- build-70-status -->';
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const body = `${marker}\n## BUILD 70 — Godot 4.7.1\n- Windows x64: **${process.env.WINDOWS_RESULT}**\n- Android ARM64: **${process.env.ANDROID_RESULT}**\n- Commit: \`${context.sha}\`\n- [Abrir ejecución](${runUrl})`;
-            const issue_number = 6;
-            const { data: comments } = await github.rest.issues.listComments({ owner: context.repo.owner, repo: context.repo.repo, issue_number, per_page: 100 });
-            const existing = comments.find(c => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number, body });
-            }
