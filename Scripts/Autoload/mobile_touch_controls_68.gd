@@ -11,6 +11,13 @@ const DEFAULT_LAYOUT := {
 	"x": [0.82, 0.58], "y": [0.73, 0.70],
 	"start": [0.53, 0.91],
 }
+const PRIMARY_JOYPAD_ACTIONS: Array[StringName] = [
+	&"move_left_0", &"move_right_0", &"move_up_0", &"move_down_0",
+	&"jump_0", &"run_0", &"spin_jump_0", &"dive_0", &"pause",
+	&"ui_left", &"ui_right", &"ui_up", &"ui_down", &"ui_accept",
+	&"ui_cancel", &"ui_back", &"ui_tab_left", &"ui_tab_right",
+	&"apply_settings",
+]
 
 var root: Control
 var dimmer: ColorRect
@@ -29,7 +36,10 @@ func _ready() -> void:
 	layer = 90
 	_load_pixel_font()
 	_build_overlay()
+	_normalize_primary_joypad_devices()
 	get_viewport().size_changed.connect(_apply_layout)
+	if not Input.joy_connection_changed.is_connected(_on_joy_connection_changed):
+		Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	# MobileTouchControls is inserted before some of the existing autoloads.
 	# Defer reading SettingsManager until every autoload has completed _ready().
 	call_deferred("_finish_startup")
@@ -50,6 +60,26 @@ func _finish_startup() -> void:
 func _process(_delta: float) -> void:
 	if root != null:
 		root.visible = edit_mode or (OS.has_feature("android") and enabled and _is_gameplay_scene())
+
+func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	# Android often assigns a different device number after reconnecting a
+	# Bluetooth or USB controller. Rebind the primary actions to any device ID.
+	call_deferred("_normalize_primary_joypad_devices")
+
+func _normalize_primary_joypad_devices() -> void:
+	for action: StringName in PRIMARY_JOYPAD_ACTIONS:
+		if not InputMap.has_action(action):
+			continue
+		var events: Array[InputEvent] = InputMap.action_get_events(action).duplicate()
+		for event: InputEvent in events:
+			if not (event is InputEventJoypadButton or event is InputEventJoypadMotion):
+				continue
+			if event.device == -1:
+				continue
+			var replacement: InputEvent = event.duplicate() as InputEvent
+			replacement.device = -1
+			InputMap.action_erase_event(action, event)
+			InputMap.action_add_event(action, replacement)
 
 func _build_overlay() -> void:
 	root = Control.new()
