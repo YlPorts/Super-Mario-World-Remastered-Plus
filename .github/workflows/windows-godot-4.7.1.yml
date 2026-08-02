@@ -43,17 +43,17 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
-          curl -fL --retry 5 --retry-delay 3 \
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 \
             -o "/tmp/${GODOT_LINUX_ZIP}" \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_LINUX_ZIP}"
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}/${GODOT_LINUX_ZIP}"
           rm -rf /tmp/godot-bin
           mkdir -p /tmp/godot-bin
           unzip -q "/tmp/${GODOT_LINUX_ZIP}" -d /tmp/godot-bin
           sudo install -m 0755 "/tmp/godot-bin/${GODOT_LINUX_BIN}" /usr/local/bin/godot
 
-          curl -fL --retry 5 --retry-delay 3 \
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 \
             -o "/tmp/${GODOT_TEMPLATES_TPZ}" \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_TEMPLATES_TPZ}"
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}/${GODOT_TEMPLATES_TPZ}"
           rm -rf /tmp/godot-templates
           mkdir -p /tmp/godot-templates
           unzip -q "/tmp/${GODOT_TEMPLATES_TPZ}" -d /tmp/godot-templates
@@ -174,17 +174,17 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
-          curl -fL --retry 5 --retry-delay 3 \
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 \
             -o "/tmp/${GODOT_LINUX_ZIP}" \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_LINUX_ZIP}"
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}/${GODOT_LINUX_ZIP}"
           rm -rf /tmp/godot-bin
           mkdir -p /tmp/godot-bin
           unzip -q "/tmp/${GODOT_LINUX_ZIP}" -d /tmp/godot-bin
           sudo install -m 0755 "/tmp/godot-bin/${GODOT_LINUX_BIN}" /usr/local/bin/godot
 
-          curl -fL --retry 5 --retry-delay 3 \
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 \
             -o "/tmp/${GODOT_TEMPLATES_TPZ}" \
-            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_TEMPLATES_TPZ}"
+            "https://github.com/godotengine/godot-builds/releases/download/${GODOT_RELEASE}/${GODOT_TEMPLATES_TPZ}"
           rm -rf /tmp/godot-templates
           mkdir -p /tmp/godot-templates
           unzip -q "/tmp/${GODOT_TEMPLATES_TPZ}" -d /tmp/godot-templates
