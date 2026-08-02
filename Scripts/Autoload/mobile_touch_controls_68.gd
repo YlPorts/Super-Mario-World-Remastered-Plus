@@ -27,10 +27,15 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 90
 	_build_overlay()
-	_load_settings()
 	get_viewport().size_changed.connect(_apply_layout)
-	call_deferred("_apply_layout")
+	# MobileTouchControls is inserted before some of the existing autoloads.
+	# Defer reading SettingsManager until every autoload has completed _ready().
+	call_deferred("_finish_startup")
 	print("[MOBILE68] SNES TOUCH CONTROLS READY")
+
+func _finish_startup() -> void:
+	_load_settings()
+	_apply_layout()
 
 func _process(_delta: float) -> void:
 	if root != null:
@@ -104,7 +109,10 @@ func _load_settings() -> void:
 	var manager := get_node_or_null("/root/SettingsManager")
 	if manager == null:
 		return
-	var settings: Dictionary = manager.settings_file
+	var loaded_settings = manager.get("settings_file")
+	if not loaded_settings is Dictionary:
+		return
+	var settings: Dictionary = loaded_settings
 	enabled = bool(settings.get("mobile_touch_enabled", settings.get("touch_controls_enabled", true)))
 	control_scale = float(settings.get("mobile_touch_scale", 1.0))
 	control_opacity = float(settings.get("mobile_touch_opacity", 0.86))
@@ -179,6 +187,9 @@ func _save_settings() -> void:
 	var manager := get_node_or_null("/root/SettingsManager")
 	if manager == null:
 		return
+	var loaded_settings = manager.get("settings_file")
+	if not loaded_settings is Dictionary:
+		return
 	manager.settings_file["mobile_touch_enabled"] = enabled
 	manager.settings_file["mobile_touch_scale"] = control_scale
 	manager.settings_file["mobile_touch_opacity"] = control_opacity
@@ -194,3 +205,8 @@ func _is_gameplay_scene() -> bool:
 		if path.contains(blocked):
 			return false
 	return true
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		for button in buttons.values():
+			button.release_action()
