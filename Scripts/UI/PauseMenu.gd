@@ -2,6 +2,8 @@ extends Control
 
 @onready var options = [$Box/MarginContainer/Vbox/Label, $Box/MarginContainer/Vbox/Label2, $Box/MarginContainer/Vbox/Label3]
 @onready var arrow: TextureRect = $Arrow
+@onready var box: NinePatchRect = $Box
+@onready var option_container: VBoxContainer = $Box/MarginContainer/Vbox
 
 var selected_index := 0
 var can_select := true
@@ -9,8 +11,14 @@ var valid_choices := [true, true, true]
 var can_quit := false
 var can_restart := false
 
+
 func _ready() -> void:
+	var language_manager := get_node_or_null("/root/LanguageManager")
+	if language_manager != null and not language_manager.language_changed.is_connected(_on_language_changed):
+		language_manager.language_changed.connect(_on_language_changed)
+	call_deferred("_fit_menu_box")
 	_update_arrow_position()
+
 
 func _process(_delta: float) -> void:
 	visible = GameManager.game_paused
@@ -40,6 +48,27 @@ func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("pause"):
 		pause_toggle()
 
+
+func _fit_menu_box() -> void:
+	if not is_instance_valid(box) or not is_instance_valid(option_container):
+		return
+	await get_tree().process_frame
+	var content_size := option_container.get_combined_minimum_size()
+	var viewport_width := get_viewport_rect().size.x
+	var wanted_width := max(156.0, content_size.x + 32.0)
+	wanted_width = min(wanted_width, max(156.0, viewport_width - 24.0))
+	var wanted_height := max(84.0, content_size.y + 20.0)
+	box.offset_left = -floor(wanted_width * 0.5)
+	box.offset_right = ceil(wanted_width * 0.5)
+	box.offset_top = -floor(wanted_height * 0.5)
+	box.offset_bottom = ceil(wanted_height * 0.5)
+	call_deferred("_update_arrow_position")
+
+
+func _on_language_changed(_code: String) -> void:
+	call_deferred("_fit_menu_box")
+
+
 func _update_arrow_position() -> void:
 	if options.is_empty():
 		return
@@ -47,13 +76,13 @@ func _update_arrow_position() -> void:
 	var option: Control = options[selected_index]
 	if not is_instance_valid(option) or not is_instance_valid(arrow):
 		return
-	# The old scene stored Arrow.x for a fixed 480 px canvas. Derive both axes
-	# from the selected label so the pointer stays beside the centered menu on
-	# widescreen and ultrawide viewports.
+	# Derive both axes from the selected label so the pointer remains beside the
+	# centered menu on 16:9, widescreen and ultrawide displays.
 	arrow.global_position = Vector2(
 		option.global_position.x - arrow.size.x - 4.0,
 		option.global_position.y + (option.size.y - arrow.size.y) * 0.5
 	)
+
 
 func pause_toggle() -> void:
 	if get_tree().paused:
@@ -62,6 +91,7 @@ func pause_toggle() -> void:
 	elif not GameManager.game_paused:
 		pause_game()
 
+
 func players_grounded_check() -> bool:
 	for i in CoopManager.alive_players.values():
 		if is_instance_valid(i):
@@ -69,8 +99,10 @@ func players_grounded_check() -> bool:
 				return false
 	return true
 
+
 func more_than_one_life_check() -> bool:
 	return GameManager.lives > 0
+
 
 func option_selected() -> void:
 	if can_select:
@@ -86,16 +118,20 @@ func option_selected() -> void:
 	do_option()
 	selected_index = 0
 
+
 func resume_game() -> void:
 	GameManager.game_paused = false
 	get_tree().paused = false
+
 
 func pause_game() -> void:
 	SoundManager.play_ui_sound("res://Assets/Audio/SFX/pause.wav")
 	GameManager.game_paused = true
 	get_tree().paused = true
 	can_select = true
+	call_deferred("_fit_menu_box")
 	call_deferred("_update_arrow_position")
+
 
 func do_option() -> void:
 	match selected_index:
@@ -120,13 +156,16 @@ func do_option() -> void:
 				TransitionManager.transition_to_map(GameManager.current_map_path, GameManager.current_level, false)
 			GameManager.game_paused = false
 
+
 const drag_coins := ["res://Resources/Achievements/Completionist/DragCoins/BVDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/CIDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/DPDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/IFDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/SPDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/SRDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/TBDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/VDDragCoin.tres", "res://Resources/Achievements/Completionist/DragCoins/YIDragCoin.tres"]
+
 
 func check_drag_coins() -> bool:
 	for i in drag_coins:
 		if not SaveManager.current_save.achievements_unlocked.has(i):
 			return false
 	return true
+
 
 func select_animation(option) -> void:
 	for i in 5:
