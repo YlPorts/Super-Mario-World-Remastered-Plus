@@ -1,0 +1,111 @@
+name: BUILD 71 parse diagnostics
+
+on:
+  pull_request:
+    branches:
+      - windows-godot-4.7.1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-71-parse-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7.1"
+  GODOT_LINUX_URL: "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_linux.x86_64.zip"
+
+jobs:
+  windows-parse:
+    name: Windows prepare and parse
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_LINUX_URL"
+          rm -rf /tmp/godot-bin
+          mkdir -p /tmp/godot-bin
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          GODOT_BIN="$(find /tmp/godot-bin -maxdepth 1 -type f -name 'Godot_v4.7.1-stable_linux.x86_64' -print -quit)"
+          test -n "$GODOT_BIN"
+          sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
+          godot --version
+
+      - name: Prepare Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/prepare_windows.py
+          python3 tools/prepare_common_ui.py
+
+      - name: Import and parse Windows
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --import 2>&1 | tee /tmp/windows-parse.log
+
+      - name: Upload Windows parse log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-71-windows-parse-log
+          path: /tmp/windows-parse.log
+          if-no-files-found: ignore
+          retention-days: 3
+
+  android-parse:
+    name: Android prepare and parse
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_LINUX_URL"
+          rm -rf /tmp/godot-bin
+          mkdir -p /tmp/godot-bin
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          GODOT_BIN="$(find /tmp/godot-bin -maxdepth 1 -type f -name 'Godot_v4.7.1-stable_linux.x86_64' -print -quit)"
+          test -n "$GODOT_BIN"
+          sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
+          godot --version
+
+      - name: Prepare Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/prepare_android_mobile_68.py
+          python3 tools/prepare_common_ui.py
+
+      - name: Import and parse Android project
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --import 2>&1 | tee /tmp/android-parse.log
+
+      - name: Upload Android parse log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-71-android-parse-log
+          path: /tmp/android-parse.log
+          if-no-files-found: ignore
+          retention-days: 3
