@@ -45,6 +45,11 @@ func set_edit_mode(enabled: bool) -> void:
 	edit_mode = enabled
 	_refresh_visual()
 
+func release_action() -> void:
+	active_touch = -1
+	mouse_active = false
+	_release_action()
+
 func _refresh_visual() -> void:
 	if is_instance_valid(caption_label):
 		caption_label.text = caption
@@ -123,4 +128,4 @@ func _release_action() -> void:
 		Input.action_release(action_name)
 
 func _exit_tree() -> void:
-	_release_action()
+	release_action()
