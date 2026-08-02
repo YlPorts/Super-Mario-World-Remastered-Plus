@@ -1,118 +1,15 @@
-name: Android APK - Godot 4.7.1
+name: Legacy Android APK workflow (manual only)
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - windows-godot-4.7.1
-      - android-touch-controls
-      - android-rom-ultrawide
-  pull_request:
-    branches:
-      - main
-
-concurrency:
-  group: android-apk-471-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
 
-env:
-  GODOT_VERSION: "4.7.1"
-  EXPORT_NAME: "SuperMarioWorldRemasteredPlus-Mobile"
-
 jobs:
-  build-android:
-    name: Build Android ARM64 APK with Godot 4.7.1
-    runs-on: ubuntu-24.04
-    container:
-      image: barichello/godot-ci:4.7.1
-
+  notice:
+    name: Android APK workflow replaced by BUILD 70
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v4
-        with:
-          ref: windows-godot-4.7.1
-          lfs: true
-
-      - name: Configure Godot 4.7.1 Android project
-        shell: bash
-        run: |
-          set -euo pipefail
-          apt-get update
-          apt-get install -y --no-install-recommends python3 ca-certificates zip openjdk-17-jdk-headless
-          rm -rf /var/lib/apt/lists/*
-
-          mkdir -p "$HOME/.local/share/godot/export_templates" "$HOME/.config" "$HOME/.android"
-
-          CONFIG_SOURCE="/root/.config/godot"
-          CONFIG_TARGET="$HOME/.config/godot"
-          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
-            rm -rf "$CONFIG_TARGET"
-            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
-          fi
-
-          TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
-            rm -rf "$TEMPLATE_TARGET"
-            mv "$TEMPLATE_SOURCE" "$TEMPLATE_TARGET"
-          fi
-
-          if [ ! -f "$HOME/.android/debug.keystore" ]; then
-            keytool -genkeypair -v \
-              -keystore "$HOME/.android/debug.keystore" \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Android Debug,O=YlPorts,C=PA"
-          fi
-
-          python3 tools/prepare_android_mobile_68.py
-          python3 tools/prepare_common_ui.py
-
-      - name: Import and validate project
-        shell: bash
-        run: |
-          set -euo pipefail
-          godot --headless --path . --import 2>&1 | tee /tmp/android-import.log
-          if grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/android-import.log; then
-            cat /tmp/android-import.log >&2
-            exit 1
-          fi
-
-      - name: Export debug APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p build/android
-          godot --headless --verbose --path . \
-            --export-debug "Android Mobile" \
-            "build/android/${EXPORT_NAME}.apk"
-          test -s "build/android/${EXPORT_NAME}.apk"
-
-      - name: Package Android build
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat > build/android/README.txt <<'EOF'
-          Super Mario World Remastered Plus - Android ARM64
-          Compilado con Godot 4.7.1.
-          Incluye selector de ROM, interfaz bilingüe y controles táctiles configurables.
-          EOF
-          cd build/android
-          zip -9 "${EXPORT_NAME}-Godot-4.7.1.zip" "${EXPORT_NAME}.apk" README.txt
-
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: smw-remastered-plus-android-arm64-godot-4.7.1
-          path: |
-            build/android/${{ env.EXPORT_NAME }}.apk
-            build/android/${{ env.EXPORT_NAME }}-Godot-4.7.1.zip
-          if-no-files-found: error
-          retention-days: 14
+      - name: Legacy notice
+        run: echo "This Android APK workflow was replaced by the PC and Android Godot 4.7.1 BUILD 70 workflow."
