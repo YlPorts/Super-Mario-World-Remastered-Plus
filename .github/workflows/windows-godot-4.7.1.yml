@@ -18,13 +18,17 @@ permissions:
 
 env:
   GODOT_VERSION: "4.7.1"
+  GODOT_RELEASE: "4.7.1-stable"
+  GODOT_TEMPLATE_DIR: "4.7.1.stable"
+  GODOT_LINUX_ZIP: "Godot_v4.7.1-stable_linux.x86_64.zip"
+  GODOT_LINUX_BIN: "Godot_v4.7.1-stable_linux.x86_64"
+  GODOT_TEMPLATES_TPZ: "Godot_v4.7.1-stable_export_templates.tpz"
 
 jobs:
   build-windows:
     name: Build Windows x64
     runs-on: ubuntu-24.04
-    container:
-      image: barichello/godot-ci:4.7.1
+    timeout-minutes: 35
 
     steps:
       - name: Checkout shared branch
@@ -33,28 +37,38 @@ jobs:
           ref: windows-godot-4.7.1
           lfs: true
 
+      - name: Install official Godot 4.7.1 and templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
+          curl -fL --retry 5 --retry-delay 3 \
+            -o "/tmp/${GODOT_LINUX_ZIP}" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_LINUX_ZIP}"
+          rm -rf /tmp/godot-bin
+          mkdir -p /tmp/godot-bin
+          unzip -q "/tmp/${GODOT_LINUX_ZIP}" -d /tmp/godot-bin
+          sudo install -m 0755 "/tmp/godot-bin/${GODOT_LINUX_BIN}" /usr/local/bin/godot
+
+          curl -fL --retry 5 --retry-delay 3 \
+            -o "/tmp/${GODOT_TEMPLATES_TPZ}" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_TEMPLATES_TPZ}"
+          rm -rf /tmp/godot-templates
+          mkdir -p /tmp/godot-templates
+          unzip -q "/tmp/${GODOT_TEMPLATES_TPZ}" -d /tmp/godot-templates
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_DIR}"
+          cp -a /tmp/godot-templates/templates/. \
+            "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_DIR}/"
+
+          godot --version | tee /tmp/godot-version.txt
+          grep -Eq '^4\.7\.1\.stable' /tmp/godot-version.txt
+          test -s "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_DIR}/windows_release_x86_64.exe"
+
       - name: Configure bilingual Windows project
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update
-          apt-get install -y --no-install-recommends python3 ca-certificates zip
-          rm -rf /var/lib/apt/lists/*
-
-          mkdir -p ~/.local/share/godot/export_templates ~/.config
-          CONFIG_SOURCE="/root/.config/godot"
-          CONFIG_TARGET="$HOME/.config/godot"
-          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
-            rm -rf "$CONFIG_TARGET"
-            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
-          fi
-          TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
-            rm -rf "$TEMPLATE_TARGET"
-            mv "$TEMPLATE_SOURCE" "$TEMPLATE_TARGET"
-          fi
-
           python3 tools/prepare_windows.py
           python3 tools/prepare_common_ui.py
           test -s Assets/Fonts/PixelifySans.ttf
@@ -109,7 +123,7 @@ jobs:
              build/windows/languages/
           cat > build/windows/README.txt <<'EOF'
           Super Mario World Remastered Plus - Windows x64 BUILD 70
-          Compilado con Godot 4.7.1.
+          Compilado con Godot 4.7.1 estable.
           Idiomas seleccionables: English y Español.
           EOF
           cd build/windows
@@ -126,8 +140,7 @@ jobs:
   build-android:
     name: Build Android ARM64 APK
     runs-on: ubuntu-24.04
-    container:
-      image: barichello/godot-ci:4.7.1
+    timeout-minutes: 45
 
     steps:
       - name: Checkout shared branch
@@ -136,27 +149,70 @@ jobs:
           ref: windows-godot-4.7.1
           lfs: true
 
-      - name: Configure Android project
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update
-          apt-get install -y --no-install-recommends python3 ca-certificates zip openjdk-17-jdk-headless
-          rm -rf /var/lib/apt/lists/*
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
-          mkdir -p ~/.local/share/godot/export_templates ~/.config ~/.android
-          CONFIG_SOURCE="/root/.config/godot"
-          CONFIG_TARGET="$HOME/.config/godot"
-          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
-            rm -rf "$CONFIG_TARGET"
-            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
-          fi
-          TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
-            rm -rf "$TEMPLATE_TARGET"
-            mv "$TEMPLATE_SOURCE" "$TEMPLATE_TARGET"
-          fi
+      - name: Install official Godot 4.7.1 and templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
+          curl -fL --retry 5 --retry-delay 3 \
+            -o "/tmp/${GODOT_LINUX_ZIP}" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_LINUX_ZIP}"
+          rm -rf /tmp/godot-bin
+          mkdir -p /tmp/godot-bin
+          unzip -q "/tmp/${GODOT_LINUX_ZIP}" -d /tmp/godot-bin
+          sudo install -m 0755 "/tmp/godot-bin/${GODOT_LINUX_BIN}" /usr/local/bin/godot
+
+          curl -fL --retry 5 --retry-delay 3 \
+            -o "/tmp/${GODOT_TEMPLATES_TPZ}" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_RELEASE}/${GODOT_TEMPLATES_TPZ}"
+          rm -rf /tmp/godot-templates
+          mkdir -p /tmp/godot-templates
+          unzip -q "/tmp/${GODOT_TEMPLATES_TPZ}" -d /tmp/godot-templates
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_DIR}"
+          cp -a /tmp/godot-templates/templates/. \
+            "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_DIR}/"
+
+          godot --version | tee /tmp/godot-version.txt
+          grep -Eq '^4\.7\.1\.stable' /tmp/godot-version.txt
+          test -s "$HOME/.local/share/godot/export_templates/${GODOT_TEMPLATE_DIR}/android_debug.apk"
+
+      - name: Configure Android export tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "$SDK_ROOT"
+          mkdir -p "$HOME/.config/godot" "$HOME/.android"
+          cat > "$HOME/.config/godot/editor_settings-4.7.tres" <<EOF
+          [gd_resource format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$SDK_ROOT"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
 
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             keytool -genkeypair -v \
@@ -170,6 +226,10 @@ jobs:
               -dname "CN=Android Debug,O=YlPorts,C=PA"
           fi
 
+      - name: Configure Android mobile project
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 tools/prepare_android_mobile_68.py
           python3 tools/prepare_common_ui.py
           test -s Assets/Fonts/PixelifySans.ttf
@@ -204,7 +264,7 @@ jobs:
           set -euo pipefail
           cat > build/android/package/README.txt <<'EOF'
           Super Mario World Remastered Plus - Android ARM64 BUILD 70
-          Compilado con Godot 4.7.1.
+          Compilado con Godot 4.7.1 estable.
           Incluye selector AÑADIR ROM y controles táctiles SNES configurables.
           EOF
           cd build/android/package
