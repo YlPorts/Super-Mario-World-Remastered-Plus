@@ -11,13 +11,13 @@ permissions:
 
 env:
   GODOT_VERSION: "4.7.1"
+  GODOT_STATUS: "stable"
+  GODOT_RELEASE_BASE: "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable"
 
 jobs:
   windows:
     name: Windows x64 Godot 4.7.1
     runs-on: ubuntu-24.04
-    container:
-      image: barichello/godot-ci:4.7.1
 
     steps:
       - name: Checkout BUILD 70 source
@@ -26,28 +26,46 @@ jobs:
           ref: windows-godot-4.7.1
           lfs: true
 
-      - name: Prepare Windows project
+      - name: Install official Godot 4.7.1 and templates
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update
-          apt-get install -y --no-install-recommends python3 ca-certificates zip
-          rm -rf /var/lib/apt/lists/*
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
 
-          mkdir -p "$HOME/.local/share/godot/export_templates" "$HOME/.config"
-          CONFIG_SOURCE="/root/.config/godot"
-          CONFIG_TARGET="$HOME/.config/godot"
-          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
-            rm -rf "$CONFIG_TARGET"
-            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
-          fi
-          TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
-            rm -rf "$TEMPLATE_TARGET"
-            mv "$TEMPLATE_SOURCE" "$TEMPLATE_TARGET"
+          GODOT_ZIP="$RUNNER_TEMP/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip"
+          TEMPLATES_TPZ="$RUNNER_TEMP/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
+          curl -fL --retry 5 --retry-delay 3 \
+            "$GODOT_RELEASE_BASE/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip" \
+            -o "$GODOT_ZIP"
+          curl -fL --retry 5 --retry-delay 3 \
+            "$GODOT_RELEASE_BASE/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz" \
+            -o "$TEMPLATES_TPZ"
+
+          mkdir -p "$RUNNER_TEMP/godot" "$RUNNER_TEMP/templates"
+          unzip -q "$GODOT_ZIP" -d "$RUNNER_TEMP/godot"
+          unzip -q "$TEMPLATES_TPZ" -d "$RUNNER_TEMP/templates"
+          GODOT_BIN="$(find "$RUNNER_TEMP/godot" -maxdepth 1 -type f -name 'Godot_v*_linux.x86_64' -print -quit)"
+          test -n "$GODOT_BIN"
+          sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
+
+          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+          mkdir -p "$TEMPLATE_TARGET"
+          if [ -d "$RUNNER_TEMP/templates/templates" ]; then
+            cp -a "$RUNNER_TEMP/templates/templates/." "$TEMPLATE_TARGET/"
+          else
+            cp -a "$RUNNER_TEMP/templates/." "$TEMPLATE_TARGET/"
           fi
 
+          godot --version | tee /tmp/godot-version.txt
+          grep -Fq "${GODOT_VERSION}.${GODOT_STATUS}" /tmp/godot-version.txt
+          test -s "$TEMPLATE_TARGET/windows_debug_x86_64.exe"
+          test -s "$TEMPLATE_TARGET/windows_release_x86_64.exe"
+
+      - name: Prepare and import Windows project
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 tools/prepare_windows.py
           python3 tools/prepare_common_ui.py
           godot --headless --path . --import 2>&1 | tee /tmp/windows-import.log
@@ -63,7 +81,8 @@ jobs:
           mkdir -p build/windows
           godot --headless --verbose --path . \
             --export-release "Windows Desktop" \
-            build/windows/SuperMarioWorldRemasteredPlus.exe
+            build/windows/SuperMarioWorldRemasteredPlus.exe \
+            2>&1 | tee /tmp/windows-export.log
           test -s build/windows/SuperMarioWorldRemasteredPlus.exe
           test -s build/windows/SuperMarioWorldRemasteredPlus.pck
           cd build/windows
@@ -80,8 +99,6 @@ jobs:
   android:
     name: Android ARM64 Godot 4.7.1
     runs-on: ubuntu-24.04
-    container:
-      image: barichello/godot-ci:4.7.1
 
     steps:
       - name: Checkout BUILD 70 source
@@ -90,28 +107,61 @@ jobs:
           ref: windows-godot-4.7.1
           lfs: true
 
-      - name: Prepare Android project
+      - name: Install official Godot 4.7.1 and templates
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update
-          apt-get install -y --no-install-recommends python3 ca-certificates zip openjdk-17-jdk-headless
-          rm -rf /var/lib/apt/lists/*
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip openjdk-17-jdk-headless
 
-          mkdir -p "$HOME/.local/share/godot/export_templates" "$HOME/.config" "$HOME/.android"
-          CONFIG_SOURCE="/root/.config/godot"
-          CONFIG_TARGET="$HOME/.config/godot"
-          if [ -d "$CONFIG_SOURCE" ] && [ "$CONFIG_SOURCE" != "$CONFIG_TARGET" ]; then
-            rm -rf "$CONFIG_TARGET"
-            mv "$CONFIG_SOURCE" "$CONFIG_TARGET"
-          fi
-          TEMPLATE_SOURCE="/root/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-          if [ -d "$TEMPLATE_SOURCE" ] && [ "$TEMPLATE_SOURCE" != "$TEMPLATE_TARGET" ]; then
-            rm -rf "$TEMPLATE_TARGET"
-            mv "$TEMPLATE_SOURCE" "$TEMPLATE_TARGET"
+          GODOT_ZIP="$RUNNER_TEMP/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip"
+          TEMPLATES_TPZ="$RUNNER_TEMP/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz"
+          curl -fL --retry 5 --retry-delay 3 \
+            "$GODOT_RELEASE_BASE/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip" \
+            -o "$GODOT_ZIP"
+          curl -fL --retry 5 --retry-delay 3 \
+            "$GODOT_RELEASE_BASE/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_export_templates.tpz" \
+            -o "$TEMPLATES_TPZ"
+
+          mkdir -p "$RUNNER_TEMP/godot" "$RUNNER_TEMP/templates"
+          unzip -q "$GODOT_ZIP" -d "$RUNNER_TEMP/godot"
+          unzip -q "$TEMPLATES_TPZ" -d "$RUNNER_TEMP/templates"
+          GODOT_BIN="$(find "$RUNNER_TEMP/godot" -maxdepth 1 -type f -name 'Godot_v*_linux.x86_64' -print -quit)"
+          test -n "$GODOT_BIN"
+          sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
+
+          TEMPLATE_TARGET="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+          mkdir -p "$TEMPLATE_TARGET"
+          if [ -d "$RUNNER_TEMP/templates/templates" ]; then
+            cp -a "$RUNNER_TEMP/templates/templates/." "$TEMPLATE_TARGET/"
+          else
+            cp -a "$RUNNER_TEMP/templates/." "$TEMPLATE_TARGET/"
           fi
 
+          godot --version | tee /tmp/godot-version.txt
+          grep -Fq "${GODOT_VERSION}.${GODOT_STATUS}" /tmp/godot-version.txt
+          test -s "$TEMPLATE_TARGET/android_debug.apk"
+
+      - name: Configure Android SDK, Java and signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          ANDROID_SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          JAVA_SDK="${JAVA_HOME_17_X64:-$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")") }"
+          JAVA_SDK="${JAVA_SDK% }"
+          test -x "$ANDROID_SDK/platform-tools/adb"
+          test -x "$JAVA_SDK/bin/java"
+
+          SDKMANAGER="$(find "$ANDROID_SDK/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK" \
+            "platform-tools" \
+            "build-tools;35.0.1" \
+            "platforms;android-35" \
+            "cmdline-tools;latest"
+
+          mkdir -p "$HOME/.android" "$HOME/.config/godot"
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             keytool -genkeypair -v \
               -keystore "$HOME/.android/debug.keystore" \
@@ -124,6 +174,28 @@ jobs:
               -dname "CN=Android Debug,O=YlPorts,C=PA"
           fi
 
+          cat > "$HOME/.config/godot/editor_settings-4.7.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_SDK"
+          export/android/java_sdk_path = "$JAVA_SDK"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+
+          echo "ANDROID_HOME=$ANDROID_SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=$JAVA_SDK" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$HOME/.android/debug.keystore" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
+
+      - name: Prepare and import Android project
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 tools/prepare_android_mobile_68.py
           python3 tools/prepare_common_ui.py
           godot --headless --path . --import 2>&1 | tee /tmp/android-import.log
@@ -139,7 +211,8 @@ jobs:
           mkdir -p build/android/package
           godot --headless --verbose --path . \
             --export-debug "Android Mobile" \
-            build/android/package/SuperMarioWorldRemasteredPlus-Mobile.apk
+            build/android/package/SuperMarioWorldRemasteredPlus-Mobile.apk \
+            2>&1 | tee /tmp/android-export.log
           test -s build/android/package/SuperMarioWorldRemasteredPlus-Mobile.apk
           cd build/android/package
           zip -9 ../SuperMarioWorldRemasteredPlus-Android-arm64-BUILD-70.zip \
