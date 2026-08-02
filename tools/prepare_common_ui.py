@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import re
 import time
 import urllib.request
@@ -88,6 +89,18 @@ def patch_language_selector() -> None:
     LANGUAGE_SCENE.write_text(text, encoding="utf-8", newline="\n")
 
 
+def prepare_headless_ci() -> None:
+    if os.environ.get("CI", "").lower() != "true":
+        return
+
+    # GitHub Actions does not need VCS/editor docks. Disabling them in the
+    # temporary checkout removes editor-only failures from headless import.
+    from prepare_ci_headless import main as prepare_ci_main
+
+    if prepare_ci_main() != 0:
+        raise RuntimeError("Headless CI preparation failed")
+
+
 def main() -> int:
     download_file(FONT_URLS, FONT_FILE)
     download_file(LICENSE_URLS, FONT_LICENSE)
@@ -106,6 +119,7 @@ def main() -> int:
     )
     PROJECT.write_text(project_text, encoding="utf-8", newline="\n")
     patch_language_selector()
+    prepare_headless_ci()
 
     if not FONT_FILE.is_file():
         raise RuntimeError("Pixelify Sans was not prepared")
