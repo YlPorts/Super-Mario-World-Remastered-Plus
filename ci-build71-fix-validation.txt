@@ -1,0 +1,1 @@
+Validate the PauseMenu Godot 4.7 Variant fix on Windows and Android.
