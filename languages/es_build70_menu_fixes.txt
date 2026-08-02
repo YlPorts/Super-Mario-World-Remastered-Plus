@@ -1,0 +1,12 @@
+@code=es
+@name=Español
+@fallback=en
+SAVED AUTOMATICALLY=GUARDADO AUTOMÁTICAMENTE
+Unlocks=Desbloqueos
+Unlock Everything=Desbloquear todo
+Unlock every level, route, bonus and achievement in the next save you load.=Desbloquea todos los niveles, rutas, extras y logros en la próxima partida que cargues.
+Press Start/Enter or tap the button.=Pulsa START/ENTER o toca el botón.
+Press again to confirm=Pulsa de nuevo para confirmar
+Waiting for a save file...=Esperando una partida...
+Everything unlocked=Todo desbloqueado
+Could not unlock this save=No se pudo desbloquear esta partida
