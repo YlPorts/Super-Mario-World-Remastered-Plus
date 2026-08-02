@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import time
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,8 +14,14 @@ LANGUAGE_SCENE = ROOT / "Instances" / "UI" / "language_settings.tscn"
 FONT_DIR = ROOT / "Assets" / "Fonts"
 FONT_FILE = FONT_DIR / "PixelifySans.ttf"
 FONT_LICENSE = FONT_DIR / "PixelifySans-OFL.txt"
-FONT_URL = "https://raw.githubusercontent.com/google/fonts/main/ofl/pixelifysans/PixelifySans%5Bwght%5D.ttf"
-LICENSE_URL = "https://raw.githubusercontent.com/google/fonts/main/ofl/pixelifysans/OFL.txt"
+FONT_URLS = (
+    "https://raw.githubusercontent.com/google/fonts/main/ofl/pixelifysans/PixelifySans%5Bwght%5D.ttf",
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/pixelifysans/PixelifySans%5Bwght%5D.ttf",
+)
+LICENSE_URLS = (
+    "https://raw.githubusercontent.com/google/fonts/main/ofl/pixelifysans/OFL.txt",
+    "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/pixelifysans/OFL.txt",
+)
 
 
 def ensure_setting(text: str, section: str, key: str, value: str) -> str:
@@ -38,17 +45,34 @@ def ensure_autoload(text: str, name: str, value: str) -> str:
     return ensure_setting(text, "autoload", name, value)
 
 
-def download_file(url: str, destination: Path) -> None:
+def download_file(urls: tuple[str, ...], destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.is_file() and destination.stat().st_size > 1024:
         return
+
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    with urllib.request.urlopen(url, timeout=45) as response:
-        temporary.write_bytes(response.read())
-    if temporary.stat().st_size <= 1024:
-        temporary.unlink(missing_ok=True)
-        raise RuntimeError(f"Downloaded file is unexpectedly small: {url}")
-    temporary.replace(destination)
+    last_error: Exception | None = None
+    for url in urls:
+        for attempt in range(3):
+            try:
+                temporary.unlink(missing_ok=True)
+                request = urllib.request.Request(
+                    url,
+                    headers={"User-Agent": "SMW-Remastered-Plus-CI/70"},
+                )
+                with urllib.request.urlopen(request, timeout=45) as response:
+                    temporary.write_bytes(response.read())
+                if temporary.stat().st_size <= 1024:
+                    raise RuntimeError(f"Downloaded file is unexpectedly small: {url}")
+                temporary.replace(destination)
+                return
+            except Exception as error:  # Network errors differ between runners.
+                last_error = error
+                temporary.unlink(missing_ok=True)
+                if attempt < 2:
+                    time.sleep(2 ** attempt)
+
+    raise RuntimeError(f"Could not download {destination.name}: {last_error}")
 
 
 def patch_language_selector() -> None:
@@ -65,8 +89,8 @@ def patch_language_selector() -> None:
 
 
 def main() -> int:
-    download_file(FONT_URL, FONT_FILE)
-    download_file(LICENSE_URL, FONT_LICENSE)
+    download_file(FONT_URLS, FONT_FILE)
+    download_file(LICENSE_URLS, FONT_LICENSE)
 
     project_text = PROJECT.read_text(encoding="utf-8-sig")
     project_text = ensure_autoload(
