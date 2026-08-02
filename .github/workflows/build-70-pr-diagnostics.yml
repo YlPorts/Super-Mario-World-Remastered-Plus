@@ -1,0 +1,189 @@
+name: BUILD 70 PR diagnostics
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: build-70-pr-diagnostics-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.1"
+  GODOT_TEMPLATE_DIR: "4.7.1.stable"
+  GODOT_LINUX_URL: "https://downloads.godotengine.org/?flavor=stable&platform=linux.64&slug=linux.x86_64.zip&version=4.7.1"
+  GODOT_TEMPLATES_URL: "https://downloads.godotengine.org/?flavor=stable&platform=templates&slug=export_templates.tpz&version=4.7.1"
+
+jobs:
+  windows:
+    name: Diagnose Windows x64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot 4.7.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_LINUX_URL"
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/templates.tpz "$GODOT_TEMPLATES_URL"
+          rm -rf /tmp/godot-bin /tmp/godot-templates
+          mkdir -p /tmp/godot-bin /tmp/godot-templates
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          unzip -q /tmp/templates.tpz -d /tmp/godot-templates
+          GODOT_BIN="$(find /tmp/godot-bin -maxdepth 1 -type f -name 'Godot_v4.7.1-stable_linux.x86_64' -print -quit)"
+          test -n "$GODOT_BIN"
+          sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
+          mkdir -p "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR"
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/"
+          godot --version
+          test -s "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/windows_release_x86_64.exe"
+
+      - name: Prepare Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/prepare_windows.py
+          python3 tools/prepare_common_ui.py
+
+      - name: Import Windows
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --import 2>&1 | tee /tmp/windows-import.log
+          ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/windows-import.log
+
+      - name: Start Windows project
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --quit-after 8 2>&1 | tee /tmp/windows-startup.log
+          ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/windows-startup.log
+
+      - name: Export Windows
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/windows
+          godot --headless --verbose --path . --export-release "Windows Desktop" build/windows/SuperMarioWorldRemasteredPlus.exe 2>&1 | tee /tmp/windows-export.log
+          test -s build/windows/SuperMarioWorldRemasteredPlus.exe
+          test -s build/windows/SuperMarioWorldRemasteredPlus.pck
+
+      - name: Upload Windows logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-pr-diagnostics
+          path: /tmp/windows-*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  android:
+    name: Diagnose Android ARM64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Godot 4.7.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl python3 unzip zip
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/godot.zip "$GODOT_LINUX_URL"
+          curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o /tmp/templates.tpz "$GODOT_TEMPLATES_URL"
+          rm -rf /tmp/godot-bin /tmp/godot-templates
+          mkdir -p /tmp/godot-bin /tmp/godot-templates
+          unzip -q /tmp/godot.zip -d /tmp/godot-bin
+          unzip -q /tmp/templates.tpz -d /tmp/godot-templates
+          GODOT_BIN="$(find /tmp/godot-bin -maxdepth 1 -type f -name 'Godot_v4.7.1-stable_linux.x86_64' -print -quit)"
+          test -n "$GODOT_BIN"
+          sudo install -m 0755 "$GODOT_BIN" /usr/local/bin/godot
+          mkdir -p "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR"
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/"
+          godot --version
+          test -s "$HOME/.local/share/godot/export_templates/$GODOT_TEMPLATE_DIR/android_debug.apk"
+
+      - name: Configure Android exporter
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "$SDK_ROOT"
+          mkdir -p "$HOME/.config/godot" "$HOME/.android"
+          keytool -genkeypair -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=YlPorts,C=PA"
+          cat > "$HOME/.config/godot/editor_settings-4.7.tres" <<EOF
+          [gd_resource format=3]
+
+          [resource]
+          export/android/android_sdk_path = "$SDK_ROOT"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+
+      - name: Prepare Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/prepare_android_mobile_68.py
+          python3 tools/prepare_common_ui.py
+
+      - name: Import Android
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --import 2>&1 | tee /tmp/android-import.log
+          ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/android-import.log
+
+      - name: Start Android project
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --quit-after 8 2>&1 | tee /tmp/android-startup.log
+          ! grep -Eqi 'SCRIPT ERROR|Parse Error|Failed to load script' /tmp/android-startup.log
+
+      - name: Export Android
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/android
+          godot --headless --verbose --path . --export-debug "Android Mobile" build/android/SuperMarioWorldRemasteredPlus-Mobile.apk 2>&1 | tee /tmp/android-export.log
+          test -s build/android/SuperMarioWorldRemasteredPlus-Mobile.apk
+
+      - name: Upload Android logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-pr-diagnostics
+          path: /tmp/android-*.log
+          if-no-files-found: ignore
+          retention-days: 7
