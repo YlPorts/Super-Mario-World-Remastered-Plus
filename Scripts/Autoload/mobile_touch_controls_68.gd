@@ -3,7 +3,7 @@ extends CanvasLayer
 signal edit_mode_changed(enabled: bool)
 
 const TOUCH_BUTTON = preload("res://Scripts/UI/mobile_touch_button_68.gd")
-const PIXEL_FONT: Font = preload("res://Assets/Fonts/PixelifySans.ttf")
+const PIXEL_FONT_PATH := "res://Assets/Fonts/PixelifySans.ttf"
 const DEFAULT_LAYOUT := {
 	"left": [0.085, 0.77], "right": [0.215, 0.77],
 	"up": [0.15, 0.64], "down": [0.15, 0.90],
@@ -22,16 +22,26 @@ var enabled := true
 var control_scale := 1.0
 var control_opacity := 0.86
 var layout: Dictionary = DEFAULT_LAYOUT.duplicate(true)
+var pixel_font: Font
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 90
+	_load_pixel_font()
 	_build_overlay()
 	get_viewport().size_changed.connect(_apply_layout)
 	# MobileTouchControls is inserted before some of the existing autoloads.
 	# Defer reading SettingsManager until every autoload has completed _ready().
 	call_deferred("_finish_startup")
-	print("[MOBILE68] SNES TOUCH CONTROLS READY")
+	print("[MOBILE70] SNES TOUCH CONTROLS READY")
+
+func _load_pixel_font() -> void:
+	var font_resource: Resource = load(PIXEL_FONT_PATH)
+	if font_resource is Font:
+		pixel_font = font_resource as Font
+	else:
+		pixel_font = null
+		push_warning("[MOBILE70] Touch overlay font is unavailable: %s" % PIXEL_FONT_PATH)
 
 func _finish_startup() -> void:
 	_load_settings()
@@ -74,7 +84,8 @@ func _build_overlay() -> void:
 	edit_help.offset_bottom = 36
 	edit_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	edit_help.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	edit_help.add_theme_font_override("font", PIXEL_FONT)
+	if pixel_font != null:
+		edit_help.add_theme_font_override("font", pixel_font)
 	edit_help.add_theme_font_size_override("font_size", 15)
 	edit_help.add_theme_color_override("font_outline_color", Color.BLACK)
 	edit_help.add_theme_constant_override("outline_size", 3)
@@ -91,7 +102,8 @@ func _build_overlay() -> void:
 	save_button.offset_right = 72
 	save_button.offset_top = -52
 	save_button.offset_bottom = -14
-	save_button.add_theme_font_override("font", PIXEL_FONT)
+	if pixel_font != null:
+		save_button.add_theme_font_override("font", pixel_font)
 	save_button.add_theme_font_size_override("font_size", 13)
 	save_button.visible = false
 	save_button.pressed.connect(finish_edit_mode)
@@ -173,7 +185,7 @@ func _apply_layout() -> void:
 		return
 	for id_value in buttons.keys():
 		var button: MobileTouchButton68 = buttons[id_value]
-		var is_start := id_value == "start"
+		var is_start: bool = String(id_value) == "start"
 		var base_size := Vector2(70, 34) if is_start else Vector2(48, 48)
 		if not button.face_button and not is_start:
 			base_size = Vector2(42, 42)
