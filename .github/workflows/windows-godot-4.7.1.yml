@@ -184,6 +184,7 @@ jobs:
           grep -Fq 'config/features=PackedStringArray("4.7")' project.godot
           grep -Fq 'mobile_touch_controls_68.gd' project.godot
           grep -Fq 'rom_checker_android_67.gd' rom_checker.tscn
+          grep -Fq 'var radius: float = minf(size.x, size.y) * 0.42' Scripts/UI/mobile_touch_button_68.gd
           grep -Fq 'version/code=70' export_presets.cfg
           grep -Fq 'name="Android Mobile"' export_presets.cfg
 
