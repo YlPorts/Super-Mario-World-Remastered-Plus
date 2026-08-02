@@ -53,15 +53,17 @@ func _fit_menu_box() -> void:
 	if not is_instance_valid(box) or not is_instance_valid(option_container):
 		return
 	await get_tree().process_frame
-	var content_size := option_container.get_combined_minimum_size()
-	var viewport_width := get_viewport_rect().size.x
-	var wanted_width := max(156.0, content_size.x + 32.0)
-	wanted_width = min(wanted_width, max(156.0, viewport_width - 24.0))
-	var wanted_height := max(84.0, content_size.y + 20.0)
-	box.offset_left = -floor(wanted_width * 0.5)
-	box.offset_right = ceil(wanted_width * 0.5)
-	box.offset_top = -floor(wanted_height * 0.5)
-	box.offset_bottom = ceil(wanted_height * 0.5)
+	# Use the float-specific helpers here. Generic max()/min() return Variant in
+	# Godot 4.7, and this project treats inferred Variant warnings as errors.
+	var content_size: Vector2 = option_container.get_combined_minimum_size()
+	var viewport_width: float = get_viewport_rect().size.x
+	var wanted_width: float = maxf(156.0, content_size.x + 32.0)
+	wanted_width = minf(wanted_width, maxf(156.0, viewport_width - 24.0))
+	var wanted_height: float = maxf(84.0, content_size.y + 20.0)
+	box.offset_left = -floorf(wanted_width * 0.5)
+	box.offset_right = ceilf(wanted_width * 0.5)
+	box.offset_top = -floorf(wanted_height * 0.5)
+	box.offset_bottom = ceilf(wanted_height * 0.5)
 	call_deferred("_update_arrow_position")
 
 
