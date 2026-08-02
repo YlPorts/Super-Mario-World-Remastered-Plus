@@ -111,6 +111,11 @@ def main() -> int:
         "FontFallbackManager",
         '"*res://Scripts/Autoload/font_fallback_manager.gd"',
     )
+    project_text = ensure_autoload(
+        project_text,
+        "UnlockManager",
+        '"*res://Scripts/Autoload/unlock_manager.gd"',
+    )
     project_text = ensure_setting(
         project_text,
         "rendering",
@@ -123,7 +128,7 @@ def main() -> int:
 
     if not FONT_FILE.is_file():
         raise RuntimeError("Pixelify Sans was not prepared")
-    print("Shared bilingual UI and Latin pixel font are ready.")
+    print("Shared bilingual UI, unlock option and Latin pixel font are ready.")
     return 0
 
 
