@@ -3,7 +3,7 @@ class_name MobileTouchButton68
 
 signal position_changed(button_id: String, normalized_position: Vector2)
 
-const PIXEL_FONT: Font = preload("res://Assets/Fonts/PixelifySans.ttf")
+const PIXEL_FONT_PATH := "res://Assets/Fonts/PixelifySans.ttf"
 
 var button_id := ""
 var action_name := ""
@@ -14,21 +14,32 @@ var edit_mode := false
 var active_touch := -1
 var mouse_active := false
 var caption_label: Label
+var pixel_font: Font
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_load_pixel_font()
 	caption_label = Label.new()
 	caption_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	caption_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	caption_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	caption_label.add_theme_font_override("font", PIXEL_FONT)
+	if pixel_font != null:
+		caption_label.add_theme_font_override("font", pixel_font)
 	caption_label.add_theme_font_size_override("font_size", 15)
 	caption_label.add_theme_color_override("font_color", Color.WHITE)
 	caption_label.add_theme_color_override("font_outline_color", Color(0.06, 0.06, 0.10, 1.0))
 	caption_label.add_theme_constant_override("outline_size", 3)
 	add_child(caption_label)
 	_refresh_visual()
+
+func _load_pixel_font() -> void:
+	var font_resource: Resource = load(PIXEL_FONT_PATH)
+	if font_resource is Font:
+		pixel_font = font_resource as Font
+	else:
+		pixel_font = null
+		push_warning("[MOBILE70] Touch button font is unavailable: %s" % PIXEL_FONT_PATH)
 
 func configure(id_value: String, action_value: String, text_value: String, is_face: bool, color_value: Color) -> void:
 	button_id = id_value
