@@ -5,9 +5,6 @@ extends Node
 
 const LATIN_FONT: Font = preload("res://Assets/Fonts/PixelifySans.ttf")
 const META_APPLIED := &"_smwr_latin_fallback_applied"
-const RESCAN_SECONDS := 0.25
-
-var _elapsed := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -15,14 +12,9 @@ func _ready() -> void:
 	call_deferred("_scan_tree", get_tree().root)
 	print("[FONT67] LATIN PIXEL FALLBACK READY")
 
-func _process(delta: float) -> void:
-	_elapsed += delta
-	if _elapsed < RESCAN_SECONDS:
-		return
-	_elapsed = 0.0
-	_scan_tree(get_tree().root)
-
 func _on_node_added(node: Node) -> void:
+	# Scan only the new subtree. The former periodic full-tree pass kept walking
+	# every gameplay node even though processed controls were already marked.
 	call_deferred("_scan_tree", node)
 
 func _scan_tree(node: Node) -> void:
