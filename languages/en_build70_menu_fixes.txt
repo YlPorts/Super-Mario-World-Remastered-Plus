@@ -1,0 +1,12 @@
+@code=en
+@name=English
+@fallback=
+SAVED AUTOMATICALLY=SAVED AUTOMATICALLY
+Unlocks=Unlocks
+Unlock Everything=Unlock Everything
+Unlock every level, route, bonus and achievement in the next save you load.=Unlock every level, route, bonus and achievement in the next save you load.
+Press Start/Enter or tap the button.=Press Start/Enter or tap the button.
+Press again to confirm=Press again to confirm
+Waiting for a save file...=Waiting for a save file...
+Everything unlocked=Everything unlocked
+Could not unlock this save=Could not unlock this save
