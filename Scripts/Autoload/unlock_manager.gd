@@ -87,8 +87,10 @@ func unlock_current_save() -> bool:
 	save["peach_coins_unlocked"] = true
 
 	SaveManager.current_save = save
-	SaveManager.save_current_file()
+	# Apply the unlocked runtime values before saving. save_current_file() copies
+	# runtime values such as character colours back into the save dictionary.
 	SaveManager.apply_data()
+	SaveManager.save_current_file()
 
 	pending = false
 	_write_pending_state(false)
