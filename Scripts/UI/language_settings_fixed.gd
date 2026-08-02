@@ -2,9 +2,11 @@ extends SettingsSection
 ## Fixed two-language selector for desktop and Android builds.
 ## Community language discovery is intentionally not exposed in the UI.
 
-const SELECTOR_FONT: Font = preload("res://Assets/Fonts/PixelifySans.ttf")
+const SELECTOR_FONT_PATH := "res://Assets/Fonts/PixelifySans.ttf"
 const LANGUAGE_CODES: Array[String] = ["en", "es"]
 const LANGUAGE_NAMES: Array[String] = ["ENGLISH", "ESPAÑOL"]
+
+var selector_font: Font
 
 @onready var heading: Label = $VBoxContainer/Heading
 @onready var value: Label = $VBoxContainer/LanguageRow/Value
@@ -14,9 +16,18 @@ const LANGUAGE_NAMES: Array[String] = ["ENGLISH", "ESPAÑOL"]
 
 func _ready() -> void:
 	title = "Language"
+	_load_selector_font()
 	_apply_selector_font()
 	set_option_node_values()
 	_refresh_labels()
+
+func _load_selector_font() -> void:
+	var resource := load(SELECTOR_FONT_PATH)
+	if resource is Font:
+		selector_font = resource as Font
+	else:
+		selector_font = null
+		push_warning("[LANG70] Selector font is unavailable: %s" % SELECTOR_FONT_PATH)
 
 func _physics_process(_delta: float) -> void:
 	if not selected:
@@ -44,8 +55,10 @@ func get_chosen_options() -> Dictionary:
 	return {"language": LANGUAGE_CODES[selected_index]}
 
 func _apply_selector_font() -> void:
+	if selector_font == null:
+		return
 	for label in [heading, value, left_arrow, right_arrow, help]:
-		label.add_theme_font_override("font", SELECTOR_FONT)
+		label.add_theme_font_override("font", selector_font)
 		label.add_theme_color_override("font_outline_color", Color.BLACK)
 		label.add_theme_constant_override("outline_size", 2)
 	heading.add_theme_font_size_override("font_size", 18)
