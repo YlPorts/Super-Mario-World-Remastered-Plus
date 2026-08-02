@@ -24,7 +24,7 @@ anchor_right = 0.66875
 anchor_bottom = 0.855556
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 metadata/_edit_use_anchors_ = true
 
 [node name="Selection1" type="HBoxContainer" parent="VBoxContainer"]
