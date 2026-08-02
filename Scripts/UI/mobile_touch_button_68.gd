@@ -72,7 +72,7 @@ func _draw() -> void:
 	var shadow := Color(0.02, 0.02, 0.04, 0.58)
 	var edge := Color(0.07, 0.07, 0.11, 0.98)
 	if face_button:
-		var radius := min(size.x, size.y) * 0.42
+		var radius: float = minf(size.x, size.y) * 0.42
 		draw_circle(center + Vector2(2, 3), radius, shadow)
 		draw_circle(center, radius + 2.0, edge)
 		draw_circle(center, radius, button_color)
