@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - windows-godot-4.7.1
 
 concurrency:
   group: build-70-${{ github.event.pull_request.number || github.ref }}
